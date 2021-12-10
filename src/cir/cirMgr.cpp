@@ -17,6 +17,7 @@
 #include "cirGate.h"
 #include "util.h"
 #include <bits/stdc++.h> 
+// #include <queue>
 
 using namespace std;
 
@@ -26,6 +27,7 @@ using namespace std;
 /*   Global variable and enum  */
 /*******************************/
 CirMgr* cirMgr = 0;
+CirMgr* cirMgrG = 0;
 CirGate* CirMgr::Const0 = new CirGate(0, 0, CONST_GATE);
 
 enum CirParseError {
@@ -171,7 +173,7 @@ CirMgr::readCircuit(const string& fileName)
    file.close();
 
    // build connect
-   cirMgr->_buildConnect();
+   _buildConnect();
    return true;
 }
 
@@ -455,8 +457,8 @@ void
 CirMgr::printNetlist() const
 {
    cout << endl;
-   for (size_t i = 0;i < _dfslist.size(); ++i) {
-      CirGate* g = _dfslist[i];
+   for (size_t i = 0;i < _bfslist.size(); ++i) {
+      CirGate* g = _bfslist[i];
       cout << "[" << i << "] ";
       cout << left << setw(4) << g->getTypeStr() << g->_var;
       for (size_t j = 0;j < g->_fanin.size(); ++j) {
@@ -623,6 +625,7 @@ CirMgr::_buildConnect() {
       if (it->second->_gateType == PO_GATE || it->second->_gateType == AIG_GATE) it->second->connect(_gatelist);
    }
    genDFSList();
+   genBFSList();
 }
 
 void
@@ -630,7 +633,35 @@ CirMgr::genDFSList() {
    CirGate::setGlobalRef();
    for (size_t i = 0;i < _polist.size(); ++i) _dfs(_polist[i]);
 }
-
+void
+CirMgr::genBFSList(){
+   CirGate::setGlobalRef();
+   queue<CirGate*> _q;
+   for (size_t i=0;i<_polist.size();++i){
+      _polist[i]->setToGlobalRef();
+      _q.push(_polist[i]);
+   }
+   _bfs(_q);
+}
+void
+CirMgr::_bfs(queue<CirGate*>& _q){
+   size_t n = _q.size();
+   if (n==0) return;
+   for (size_t i =0;i<n;i++){
+      CirGate* gate = _q.front();
+      _bfslist.push_back(gate);
+      // if gate->isGlobalRef == true -> have been added to queue before
+      for (size_t j=0;j< gate->_fanin.size();++j){
+         if(!gate->_fanin[j].gate()->isGlobalRef()){
+            gate->_fanin[j].gate()->setToGlobalRef();
+            _q.push(gate->_fanin[j].gate());
+         }
+      }
+      _q.pop();
+      cout<<"ok"<<endl;
+   }
+   _bfs(_q);
+}
 void
 CirMgr::_dfs(CirGate* gate) {
    gate->setToGlobalRef();
@@ -664,6 +695,7 @@ CirMgr::reset() {
    _polist.clear();
    _aiglist.clear();
    _dfslist.clear();
+   _bfslist.clear();
    for (map<unsigned, CirGate*>::iterator it = _gatelist.begin(); it != _gatelist.end(); ++it) {
       delete it->second;
    }

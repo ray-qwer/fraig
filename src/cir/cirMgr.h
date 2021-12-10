@@ -14,6 +14,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <queue>
 
 using namespace std;
 
@@ -21,6 +22,7 @@ using namespace std;
 #include "cirDef.h"
 
 extern CirMgr *cirMgr;
+extern CirMgr *cirMgrG;
 
 
 // TODO: Define your own data members and member functions
@@ -59,7 +61,7 @@ public:
 
   // Member functions about circuit DFS
   void genDFSList();
-
+  void genBFSList();
   // CONST 0 gate
   static CirGate* Const0;
   
@@ -100,6 +102,7 @@ private:
   void class_by_hash(vector<CirGate*>&);
   void class_by_map(vector<CirGate*>&);
   void _dfs(CirGate*);
+  void _bfs(queue<CirGate*>&);
   void g_dfs(CirGate*,vector<CirGate*>&)const;
   void logout(vector<size_t>&,size_t);
 
@@ -115,6 +118,7 @@ private:
   vector<CirPoGate*> _polist;
   vector<CirAigGate*> _aiglist;
   vector<CirGate*> _dfslist;
+  vector<CirGate*> _bfslist;
   map<unsigned, CirGate*> _gatelist;
   ofstream *_simLog;
   FECgroups _FECgroups;

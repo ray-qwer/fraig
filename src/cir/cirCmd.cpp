@@ -17,6 +17,7 @@
 using namespace std;
 
 extern CirMgr* cirMgr;
+extern CirMgr* cirMgrG;
 extern int effLimit;
 
 bool
@@ -54,7 +55,7 @@ enum CirCmdState
 static CirCmdState curCmd = CIRINIT;
 
 //----------------------------------------------------------------------
-//    CIRRead <(string fileName)> [-Replace]
+//    CIRRead <(string fileName)> <-golden/-origin> [-Replace]
 //----------------------------------------------------------------------
 CmdExecStatus
 CirReadCmd::exec(const string& option)
@@ -67,11 +68,20 @@ CirReadCmd::exec(const string& option)
       return CmdExec::errorOption(CMD_OPT_MISSING, "");
 
    bool doReplace = false;
+   bool golden = false;
+
    string fileName;
    for (size_t i = 0, n = options.size(); i < n; ++i) {
       if (myStrNCmp("-Replace", options[i], 2) == 0) {
          if (doReplace) return CmdExec::errorOption(CMD_OPT_EXTRA,options[i]);
          doReplace = true;
+      }
+      else if (myStrNCmp("-Golden",options[i],2)==0 && !golden){
+         golden = true;
+      }
+      else if(myStrNCmp("-Origin",options[i],2)==0){
+         if (golden) return CmdExec::errorOption(CMD_OPT_EXTRA,options[i]);
+         golden = false;
       }
       else {
          if (fileName.size())
@@ -79,35 +89,43 @@ CirReadCmd::exec(const string& option)
          fileName = options[i];
       }
    }
-
-   if (cirMgr != 0) {
+   cout<<(cirMgrG == cirMgr)<<endl;
+   CirMgr* tmp;
+   if (golden){
+      tmp = cirMgrG;
+   } else{
+      tmp = cirMgr;
+   }
+   
+   if (tmp != 0) {
       if (doReplace) {
          cerr << "Note: original circuit is replaced..." << endl;
          curCmd = CIRINIT;
-         delete cirMgr; cirMgr = 0;
+         delete tmp; tmp = 0;
       }
       else {
          cerr << "Error: circuit already exists!!" << endl;
          return CMD_EXEC_ERROR;
       }
    }
-   cirMgr = new CirMgr;
+   tmp = new CirMgr;
 
-   if (!cirMgr->readCircuit(fileName)) {
+   if (!tmp->readCircuit(fileName)) {
       curCmd = CIRINIT;
-      delete cirMgr; cirMgr = 0;
+      delete tmp; tmp = 0;
       return CMD_EXEC_ERROR;
    }
 
    curCmd = CIRREAD;
-
+   if (golden) cirMgrG = tmp;
+   else     cirMgr = tmp;
    return CMD_EXEC_DONE;
 }
 
 void
 CirReadCmd::usage(ostream& os) const
 {
-   os << "Usage: CIRRead <(string fileName)> [-Replace]" << endl;
+   os << "Usage: CIRRead <(string fileName)> [-Golden] [-Replace]" << endl;
 }
 
 void
@@ -118,32 +136,54 @@ CirReadCmd::help() const
 }
 
 //----------------------------------------------------------------------
-//    CIRPrint [-Summary | -Netlist | -PI | -PO | -FLoating | -FECpairs]
+//    CIRPrint [-Summary | -Netlist | -PI | -PO | -FLoating | -FECpairs] <-Golden|-Origin>
 //----------------------------------------------------------------------
 CmdExecStatus
 CirPrintCmd::exec(const string& option)
 {
    // check option
    string token;
-   if (!CmdExec::lexSingleOption(option, token))
+   vector<string> options;
+   bool golden = false;
+   CirMgr* tmp;
+   if (!CmdExec::lexOptions(option, options))
       return CMD_EXEC_ERROR;
-
-   if (!cirMgr) {
+   if (options.empty())
+      return CmdExec::errorOption(CMD_OPT_MISSING,"");
+   for (size_t i = 0, n =options.size();i<n;++i){
+      if(myStrNCmp("-Golden",options[i],2)==0){
+         golden = true;
+         if (n == 1) token ="";
+      }
+      else if (myStrNCmp("-Origin",options[i],2)==0){
+         golden = false;
+         if (n == 1) token = "";
+      } else{
+         if (n == 1) return CmdExec::errorOption(CMD_OPT_MISSING,"<-Golden|-Origin>");
+         else if (n == 2) token = options[i];
+         else return CmdExec::errorOption(CMD_OPT_EXTRA,options[i]);
+      }
+   }
+   if (golden) tmp = cirMgrG;
+   else tmp = cirMgr;   
+   cout<<(cirMgrG == cirMgr) <<endl; 
+   if (!tmp) {
       cerr << "Error: circuit is not yet constructed!!" << endl;
       return CMD_EXEC_ERROR;
    }
+   
    if (token.empty() || myStrNCmp("-Summary", token, 2) == 0)
-      cirMgr->printSummary();
+      tmp->printSummary();
    else if (myStrNCmp("-Netlist", token, 2) == 0)
-      cirMgr->printNetlist();
+      tmp->printNetlist();
    else if (myStrNCmp("-PI", token, 3) == 0)
-      cirMgr->printPIs();
+      tmp->printPIs();
    else if (myStrNCmp("-PO", token, 3) == 0)
-      cirMgr->printPOs();
+      tmp->printPOs();
    else if (myStrNCmp("-FLoating", token, 3) == 0)
-      cirMgr->printFloatGates();
+      tmp->printFloatGates();
    else if (myStrNCmp("-FECpairs", token, 4) == 0)
-      cirMgr->printFECPairs();
+      tmp->printFECPairs();
    else
       return CmdExec::errorOption(CMD_OPT_ILLEGAL, token);
 
