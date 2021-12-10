@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "memory_resource": "cpp",
+        "istream": "cpp",
+        "ostream": "cpp",
+        "regex": "cpp",
+        "tuple": "cpp"
+    }
+}

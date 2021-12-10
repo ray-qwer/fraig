@@ -25,7 +25,8 @@ using namespace std;
 /*******************************/
 /*   Global variable and enum  */
 /*******************************/
-CirMgr* cirMgr = 0;
+CirMgr* original = 0;
+CirMgr* golden=0;
 CirGate* CirMgr::Const0 = new CirGate(0, 0, CONST_GATE);
 
 enum CirParseError {
@@ -171,7 +172,30 @@ CirMgr::readCircuit(const string& fileName)
    file.close();
 
    // build connect
-   cirMgr->_buildConnect();
+   original->_buildConnect();
+   return true;
+}
+
+bool
+CirMgr::readCircuit(const string& fileName, bool b)//original==1
+{
+   fstream file(fileName.c_str());
+   if (!file) { cerr << "Cannot open design \"" << fileName << "\"!!" << endl; return false; }
+   
+   if (!_readInitial(file)) return false; // will get _type _M _I _L _O _A
+   if (!_readPI(file)) return false; // get PIs
+   if (!_readPO(file)) return false; // get POs
+   if (!_readAIG(file)) return false; // get AIGs
+   if (!_readSymb(file)) return false; // read symb
+   if (_doComment) {
+      char ch;
+      while (file.get(ch)) _comment += ch;
+   }
+   file.close();
+
+   // build connect
+   if(b){original->_buildConnect();}
+   else{golden->_buildConnect();}   
    return true;
 }
 

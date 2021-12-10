@@ -20,7 +20,8 @@ using namespace std;
 #include "cirGate.h"
 #include "cirDef.h"
 
-extern CirMgr *cirMgr;
+extern CirMgr *original;
+extern CirMgr *golden;
 
 
 // TODO: Define your own data members and member functions
@@ -39,6 +40,7 @@ public:
 
   // Member functions about circuit construction
   bool readCircuit(const string&);
+  bool readCircuit(const string&, bool);
 
   // Member functions about circuit reporting
   void printSummary() const;
