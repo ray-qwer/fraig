@@ -129,7 +129,8 @@ void
 CirMgr::classify(){
   if(_FECgroups.is_first()){
     if(!Const0->_inDFSlist) _dfslist.push_back(Const0);
-    class_by_hash(_dfslist);
+    unordered_map<size_t,TwoCirFECP*> Hash;
+    class_by_hash(_dfslist,Hash);
     _FECgroups.set_first_time(false);
     auto i = _dfslist.end();
     --i;
@@ -139,7 +140,8 @@ CirMgr::classify(){
     for(size_t m  = 0;m<_FECgroups._groups.size();m++){
       if(_FECgroups._groups[m]->_o_pairs.size()>100){
         //class_by_hash
-        class_by_hash(_FECgroups._groups[m]->_o_pairs);
+        unordered_map<size_t,TwoCirFECP*> Hash;
+        class_by_hash(_FECgroups._groups[m]->_o_pairs,Hash);
         _FECgroups._groups.erase(_FECgroups._groups.begin()+m);
       }
       else if(_FECgroups._groups[m]->_o_pairs.size()==1){
@@ -147,59 +149,60 @@ CirMgr::classify(){
       }
       else{
         //class_by_map
-        class_by_map(_FECgroups._groups[m]->_o_pairs);
+        map<size_t,TwoCirFECP*> Map;
+        class_by_map(_FECgroups._groups[m]->_o_pairs,Map);
         _FECgroups._groups.erase(_FECgroups._groups.begin()+m);
       }
     }
   }
 };
-void
-CirMgr::class_by_hash(vector<CirGate*>& list){
-  unordered_map<size_t,TwoCirFECP*> Hash;
-  for(size_t i =  0;i<list.size();i++){
-    if(list[i]->getType()==PI_GATE||list[i]->getType()==PO_GATE)  continue;
-    auto m = Hash.find(list[i]->_sim);
-    auto n = Hash.find(~list[i]->_sim);
-    if(m==Hash.end()&&n==Hash.end()){
-      TwoCirFECP* tmp_pair = new TwoCirFECP;
-      tmp_pair->append(list[i],is_origin);
-      Hash.insert(pair<size_t,TwoCirFECP*>(list[i]->_sim,tmp_pair));
-      _FECgroups.append(tmp_pair);
-      list[i]->set_FECpair(tmp_pair);
-    }
-    else if(m!=Hash.end())  {
-      m->second->append(list[i],is_origin);
-      list[i]->set_FECpair(m->second);
-    }
-    else{
-      n->second->append(list[i],is_origin);
-      list[i]->set_FECpair(n->second);
-    }    
-  }
-}
-void 
-CirMgr::class_by_map(vector<CirGate*>& list){
-  map<size_t,TwoCirFECP*> the_map;
-  for(size_t i =0;i<list.size();i++){
-    auto m  = the_map.find(list[i]->_sim);
-    auto n = the_map.find(~list[i]->_sim);
-    if(m==the_map.end()&&n==the_map.end()){
-      TwoCirFECP* tmp_pair = new TwoCirFECP;
-      tmp_pair->append(list[i],is_origin);
-      the_map[list[i]->_sim] = tmp_pair;
-      _FECgroups.append(tmp_pair);
-      list[i]->set_FECpair(tmp_pair);
-    }
-    else if(m!=the_map.end()) {
-      m->second->append(list[i],is_origin);
-      list[i]->set_FECpair(m->second);
-    }
-    else {
-      n->second->append(list[i],is_origin);
-      list[i]->set_FECpair(n->second);
-    }
-  }
-}
+// void
+// CirMgr::class_by_hash(vector<CirGate*>& list){
+//   unordered_map<size_t,TwoCirFECP*> Hash;
+//   for(size_t i =  0;i<list.size();i++){
+//     if(list[i]->getType()==PI_GATE||list[i]->getType()==PO_GATE)  continue;
+//     auto m = Hash.find(list[i]->_sim);
+//     auto n = Hash.find(~list[i]->_sim);
+//     if(m==Hash.end()&&n==Hash.end()){
+//       TwoCirFECP* tmp_pair = new TwoCirFECP;
+//       tmp_pair->append(list[i],is_origin);
+//       Hash.insert(pair<size_t,TwoCirFECP*>(list[i]->_sim,tmp_pair));
+//       _FECgroups.append(tmp_pair);
+//       list[i]->set_FECpair(tmp_pair);
+//     }
+//     else if(m!=Hash.end())  {
+//       m->second->append(list[i],is_origin);
+//       list[i]->set_FECpair(m->second);
+//     }
+//     else{
+//       n->second->append(list[i],is_origin);
+//       list[i]->set_FECpair(n->second);
+//     }    
+//   }
+// }
+// void 
+// CirMgr::class_by_map(vector<CirGate*>& list){
+//   map<size_t,TwoCirFECP*> the_map;
+//   for(size_t i =0;i<list.size();i++){
+//     auto m  = the_map.find(list[i]->_sim);
+//     auto n = the_map.find(~list[i]->_sim);
+//     if(m==the_map.end()&&n==the_map.end()){
+//       TwoCirFECP* tmp_pair = new TwoCirFECP;
+//       tmp_pair->append(list[i],is_origin);
+//       the_map[list[i]->_sim] = tmp_pair;
+//       _FECgroups.append(tmp_pair);
+//       list[i]->set_FECpair(tmp_pair);
+//     }
+//     else if(m!=the_map.end()) {
+//       m->second->append(list[i],is_origin);
+//       list[i]->set_FECpair(m->second);
+//     }
+//     else {
+//       n->second->append(list[i],is_origin);
+//       list[i]->set_FECpair(n->second);
+//     }
+//   }
+// }
 void
 CirMgr::logout(vector<size_t>& sim,size_t pattern){
   if(pattern == 0)  pattern = sizeof(size_t)*8;
