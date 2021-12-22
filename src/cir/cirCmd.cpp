@@ -143,11 +143,6 @@ CirReadCmd::exec(const string& option)
          return CMD_EXEC_ERROR;
       }
    }
-
-
-
-
-
    curCmd = CIRREAD;
    return CMD_EXEC_DONE;
 }
@@ -171,20 +166,29 @@ CirReadCmd::help() const
 CmdExecStatus
 CirPrintCmd::exec(const string& option)
 {
-   // check option
+// check option
    string token;
-   vector<string> options;
-   bool golden = false;
-   CirMgr* tmp;
-   if (!CmdExec::lexOptions(option, options))
-      return CMD_EXEC_ERROR;
+   if (!CmdExec::lexSingleOption(option, token))
+   return CMD_EXEC_ERROR;
 
    if (!original) {
-      cerr << "Error: circuit is not yet constructed!!" << endl;
-      return CMD_EXEC_ERROR;
+   cerr << "Error: circuit is not yet constructed!!" << endl;
+   return CMD_EXEC_ERROR;
    }
-   
    if (token.empty() || myStrNCmp("-Summary", token, 2) == 0)
+   original->printSummary();
+   else if (myStrNCmp("-Netlist", token, 2) == 0)
+   original->printNetlist();
+   else if (myStrNCmp("-PI", token, 3) == 0)
+   original->printPIs();
+   else if (myStrNCmp("-PO", token, 3) == 0)
+   original->printPOs();
+   else if (myStrNCmp("-FLoating", token, 3) == 0)
+   original->printFloatGates();
+   else if (myStrNCmp("-FECpairs", token, 4) == 0)
+   original->printFECPairs();
+   else
+   return CmdExec::errorOption(CMD_OPT_ILLEGAL, token);
 
    return CMD_EXEC_DONE;
 }

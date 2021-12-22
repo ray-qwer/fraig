@@ -142,7 +142,7 @@ public:
   size_t hash_key(){
     size_t k = 0;
     for(size_t i =0;i<_fanin.size();i++){
-      k ^= ((size_t)_fanin[i]._gate<<_fanin[i]._inv);
+      k ^= ((size_t)_fanin[i]->_gate<<_fanin[i]->_inv);
     }
     return k;
   }
@@ -198,8 +198,8 @@ protected:
   GateType _gateType;
   unsigned _var;
   unsigned _lineNo;
-  vector<CirGateV> _fanin;
-  vector<CirGateV> _fanout;
+  vector<CirGateV*> _fanin;
+  vector<CirGateV*> _fanout;
   // vector<CirGate*> _fanin;
   // vector<CirGate*> _fanout;
   // vector<bool> _inv; // input inverse

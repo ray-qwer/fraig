@@ -177,6 +177,48 @@ CirMgr::class_by_hash(vector<CirGate*>& list){
     }    
   }
 }
+void 
+CirMgr::class_by_map(vector<CirGate*>& list){
+  map<size_t,TwoCirFECP*> the_map;
+  for(size_t i =0;i<list.size();i++){
+    auto m  = the_map.find(list[i]->_sim);
+    auto n = the_map.find(~list[i]->_sim);
+    if(m==the_map.end()&&n==the_map.end()){
+      TwoCirFECP* tmp_pair = new TwoCirFECP;
+      tmp_pair->append(list[i],is_origin);
+      the_map[list[i]->_sim] = tmp_pair;
+      _FECgroups.append(tmp_pair);
+      list[i]->set_FECpair(tmp_pair);
+    }
+    else if(m!=the_map.end()) {
+      m->second->append(list[i],is_origin);
+      list[i]->set_FECpair(m->second);
+    }
+    else {
+      n->second->append(list[i],is_origin);
+      list[i]->set_FECpair(n->second);
+    }
+  }
+}
+void
+CirMgr::logout(vector<size_t>& sim,size_t pattern){
+  if(pattern == 0)  pattern = sizeof(size_t)*8;
+  for(size_t k= 0;k<pattern;k++){
+    for(size_t input = 0;input<_pilist.size();input++){
+      int a  = (sim[input]>>(pattern-k-1))%2;
+      char c = a==0?'0':'1';
+      _simLog->put(c);
+    }
+    _simLog->put(' ');
+    cout<<" ";
+    for(size_t output = 0;output<_polist.size();output++){
+      int a = (((_polist[output]->simulate())>>(pattern-k-1))%2);
+      char c = a==0?'0':'1';
+      _simLog->put(c);
+    }
+    _simLog->put('\n');
+  }
+}
 // TODO:
 // let _FECgroups as an external global varible, just like cirMgr
 void
@@ -203,19 +245,18 @@ CirMgr::class_by_hash(vector<CirGate*>& list,unordered_map<size_t,TwoCirFECP*>& 
   return;
 }
 void 
-CirMgr::class_by_map(vector<CirGate*>& list){
-  map<size_t,TwoCirFECP*> the_map;
-  for(size_t i =0;i<list.size();i++){
-    auto m  = the_map.find(list[i]->_sim);
-    auto n = the_map.find(~list[i]->_sim);
-    if(m==the_map.end()&&n==the_map.end()){
+CirMgr::class_by_map(vector<CirGate*>& list,map<size_t,TwoCirFECP*>& Map){
+  for (size_t i = 0;i<list.size();i++){
+    auto m = Map.find(list[i]->_sim);
+    auto n = Map.find(~list[i]->_sim);
+    if ( m == Map.end() && n == Map.end() ){
       TwoCirFECP* tmp_pair = new TwoCirFECP;
       tmp_pair->append(list[i],is_origin);
-      the_map[list[i]->_sim] = tmp_pair;
+      Map[list[i]->_sim] = tmp_pair;
       _FECgroups.append(tmp_pair);
       list[i]->set_FECpair(tmp_pair);
     }
-    else if(m!=the_map.end()) {
+    else if ( m != Map.end() ){
       m->second->append(list[i],is_origin);
       list[i]->set_FECpair(m->second);
     }
@@ -224,29 +265,7 @@ CirMgr::class_by_map(vector<CirGate*>& list){
       list[i]->set_FECpair(n->second);
     }
   }
-}
-void 
-CirMgr::class_by_map(vector<CirGate*>& list,map<size_t,TwoCirFECP*>& Map){
   return;
-}
-void
-CirMgr::logout(vector<size_t>& sim,size_t pattern){
-  if(pattern == 0)  pattern = sizeof(size_t)*8;
-  for(size_t k= 0;k<pattern;k++){
-    for(size_t input = 0;input<_pilist.size();input++){
-      int a  = (sim[input]>>(pattern-k-1))%2;
-      char c = a==0?'0':'1';
-      _simLog->put(c);
-    }
-    _simLog->put(' ');
-    cout<<" ";
-    for(size_t output = 0;output<_polist.size();output++){
-      int a = (((_polist[output]->simulate())>>(pattern-k-1))%2);
-      char c = a==0?'0':'1';
-      _simLog->put(c);
-    }
-    _simLog->put('\n');
-  }
 }
 
 bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){

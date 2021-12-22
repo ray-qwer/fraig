@@ -198,6 +198,7 @@ CirMgr::readCircuit(const string& fileName, bool b)//original==1
    if(b){original->_buildConnect();}
    else{golden->_buildConnect();}
 
+   //cut matching
    vector<CirGate*> po;
    for(int i=0;i<original->_polist.size();i++){
       po.push_back((CirGate*)original->_polist[i]);
@@ -495,8 +496,8 @@ CirMgr::printNetlist() const
       cout << "[" << i << "] ";
       cout << left << setw(4) << g->getTypeStr() << g->_var;
       for (size_t j = 0;j < g->_fanin.size(); ++j) {
-         cout << " " << (g->_fanin[j].gate()->_gateType == UNDEF_GATE ? "*" : "") \
-            << (g->_fanin[j].inv() ? "!" : "") << g->_fanin[j].gate()->_var;
+         cout << " " << (g->_fanin[j]->gate()->_gateType == UNDEF_GATE ? "*" : "") \
+            << (g->_fanin[j]->inv() ? "!" : "") << g->_fanin[j]->gate()->_var;
       }
       if (g->_symbo != "") cout << " (" << g->_symbo << ")";
       cout << endl;
@@ -530,7 +531,7 @@ CirMgr::printFloatGates() const
       CirGate* gate = it->second;
       if (gate->getType() == CONST_GATE || gate->getType() == UNDEF_GATE) continue;
       for (auto i : gate->_fanin) {
-         if (i.gate()->getType() == UNDEF_GATE) {
+         if (i->gate()->getType() == UNDEF_GATE) {
             fltFanins.push_back(gate->getVar());
             break;
          }
@@ -592,13 +593,13 @@ CirMgr::writeAag(ostream& outfile) const
 
    for (auto i : _pilist) outfile << i->_var * 2 << endl;
    for (auto i : _polist) {
-      outfile << i->_fanin[0].gate()->_var * 2 + int(i->_fanin[0].inv()) << endl;
+      outfile << i->_fanin[0]->gate()->_var * 2 + int(i->_fanin[0]->inv()) << endl;
    }
    for (auto i : _dfslist) {
       if (i->_gateType == AIG_GATE) {
          outfile << i->_var * 2;
          for (size_t j = 0;j < i->_fanin.size(); ++j) {
-            outfile << " " << i->_fanin[j].gate()->_var * 2 + int(i->_fanin[j].inv());
+            outfile << " " << i->_fanin[j]->gate()->_var * 2 + int(i->_fanin[j]->inv());
          }
          outfile << endl;
       }
@@ -638,7 +639,7 @@ CirMgr::writeGate(ostream& outfile, CirGate *g) const
       if (i->_gateType == AIG_GATE) {
          outfile << i->_var * 2;
          for (size_t j = 0;j < i->_fanin.size(); ++j) {
-            outfile << " " << i->_fanin[j].gate()->_var * 2 + int(i->_fanin[j].inv());
+            outfile << " " << i->_fanin[j]->gate()->_var * 2 + int(i->_fanin[j]->inv());
          }
          outfile << endl;
       }
@@ -685,9 +686,9 @@ CirMgr::_bfs(queue<CirGate*>& _q){
       _bfslist.push_back(gate);
       // if gate->isGlobalRef == true -> have been added to queue before
       for (size_t j=0;j< gate->_fanin.size();++j){
-         if(!gate->_fanin[j].gate()->isGlobalRef()){
-            gate->_fanin[j].gate()->setToGlobalRef();
-            _q.push(gate->_fanin[j].gate());
+         if(!gate->_fanin[j]->gate()->isGlobalRef()){
+            gate->_fanin[j]->gate()->setToGlobalRef();
+            _q.push(gate->_fanin[j]->gate());
          }
       }
       _q.pop();
@@ -698,8 +699,8 @@ void
 CirMgr::_dfs(CirGate* gate) {
    gate->setToGlobalRef();
    for (size_t i = 0;i < gate->_fanin.size(); ++i) {
-      if (!gate->_fanin[i].gate()->isGlobalRef()) {
-         _dfs(gate->_fanin[i].gate());
+      if (!gate->_fanin[i]->gate()->isGlobalRef()) {
+         _dfs(gate->_fanin[i]->gate());
       }
    }
    if (gate->_gateType != UNDEF_GATE) {
@@ -711,8 +712,8 @@ void
 CirMgr::g_dfs(CirGate* gate,vector<CirGate*>& gate_dfs_list)const{
    gate->setToGlobalRef();
    for (size_t i = 0;i < gate->_fanin.size(); ++i) {
-      if (!gate->_fanin[i].gate()->isGlobalRef()) {
-         g_dfs(gate->_fanin[i].gate(),gate_dfs_list);
+      if (!gate->_fanin[i]->gate()->isGlobalRef()) {
+         g_dfs(gate->_fanin[i]->gate(),gate_dfs_list);
       }
    }
    if (gate->_gateType != UNDEF_GATE) {
