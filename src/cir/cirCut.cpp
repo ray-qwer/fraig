@@ -29,7 +29,7 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
     cout<<"size_a: "<<size_a<<", size_b: "<<size_b<<", size_newb: "<<size_newb<<endl;
     vector<vector<Var> > Vars(size_a,vector<Var>(size_b+size_newb,0));
     for(int i=0;i<size_a;++i){
-        for(int j=0;j<size_b;++j){
+        for(int j=0;j<size_b+size_newb;++j){
             Vars[i][j] = solver.newVar();
         }
     }
@@ -38,6 +38,8 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
     vector<Var> col(size_a+1,0);
     vector<bool> row_bool(size_b+size_newb,true);
     vector<bool> col_bool(size_a,true);
+
+//row sum==1
     for(int i=0;i<size_a;++i){
         for(int j=0;j<size_b+size_newb;++j){
             row[j]=solver.newVar();
@@ -48,8 +50,7 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
         fill(row_bool.begin(),row_bool.end(),false);
         solver.addClause(row,row_bool);
     }
-    bool ans=solver.solve();
-    solver.printStats();
+// column sum<=1
     for(int j=0;j<size_b+size_newb;++j){
         for(int i=0;i<size_a;i++){
             var_col[i]=Vars[i][j];
@@ -68,6 +69,7 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
         solver.addClause(col, col_bool);
         col_bool.pop_back();
     }
+//new b sum>=1
     if(size_newb!=0){
         vector<Var> newbs(size_a*size_newb,0);
         vector<bool> newbs_bool(size_a*size_newb, false);
@@ -78,7 +80,16 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
         }
         solver.addClause(newbs, newbs_bool);
     }
-    ans=solver.solve();
+    int ans=solver.solve();
     solver.printStats();
+    cout << (ans? "SAT" : "UNSAT") << endl;
+    if (ans) {
+        for(int i=0;i<size_a;++i){
+            for(int j=0;j<size_b+size_newb;++j){
+                cout << solver.getValue(Vars[i][j]) << endl;
+            }
+        }
+    }
+
     return ans;
 }
