@@ -64,7 +64,7 @@ class SatSolver
          lits.push(~la); lits.push(~lb); lits.push(~lf);
          _solver->addClause(lits); lits.clear();
       }
-
+      
       // For incremental proof, use "assumeSolve()"
       void assumeRelease() { _assump.clear(); }
       void assumeProperty(Var prop, bool val) {

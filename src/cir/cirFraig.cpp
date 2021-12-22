@@ -77,23 +77,23 @@ CirMgr::fraig()
   dostrash = false;
   //dfs
   for(auto i = _FECgroups._groups.begin();i!=_FECgroups._groups.end();i++){
-    FECpair* tmp = *i;
-    if(tmp->_pairs.size()==1){
-      tmp->_pairs[0]->set_FECpair(0);
+    TwoCirFECP* tmp = *i;
+    if(tmp->_o_pairs.size()==1){
+      tmp->_o_pairs[0]->set_FECpair(0);
     }
     else{
-      tmp->sorting();
-      for(size_t n = 1;n<tmp->_pairs.size();n++){
-        cout<<"fraig: "<<tmp->_pairs[0]->getVar()<<" merging "<<tmp->_pairs[n]->getVar()<<endl;
-        remove_from_fanin(tmp->_pairs[n],tmp->_pairs[0]);
-        if(is_inv(tmp->_pairs[0]->_sim,tmp->_pairs[n]->_sim))
-          remove_from_fanout(tmp->_pairs[n],tmp->_pairs[0],true);
+      tmp->sorting(true);
+      for(size_t n = 1;n<tmp->_o_pairs.size();n++){
+        cout<<"fraig: "<<tmp->_o_pairs[0]->getVar()<<" merging "<<tmp->_o_pairs[n]->getVar()<<endl;
+        remove_from_fanin(tmp->_o_pairs[n],tmp->_o_pairs[0]);
+        if(is_inv(tmp->_o_pairs[0]->_sim,tmp->_o_pairs[n]->_sim))
+          remove_from_fanout(tmp->_o_pairs[n],tmp->_o_pairs[0],true);
         else
-          remove_from_fanout(tmp->_pairs[n],tmp->_pairs[0],false);
-        remove_from_aiglist(tmp->_pairs[n]);
-        _gatelist.erase(tmp->_pairs[n]->getVar());          
+          remove_from_fanout(tmp->_o_pairs[n],tmp->_o_pairs[0],false);
+        remove_from_aiglist(tmp->_o_pairs[n]);
+        _gatelist.erase(tmp->_o_pairs[n]->getVar());          
       }
-      tmp->_pairs[0]->set_FECpair(0);
+      tmp->_o_pairs[0]->set_FECpair(0);
     }
   }
   _FECgroups.reset();

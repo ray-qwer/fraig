@@ -15,6 +15,7 @@
 #include <iostream>
 #include <map>
 #include <queue>
+#include "unordered_map"
 
 using namespace std;
 
@@ -62,6 +63,9 @@ public:
   // Member functions about circuit DFS
   void genDFSList();
   void genBFSList();
+  // origin/golden set/get function
+  void setType(bool i_o){is_origin = i_o;}  // true if cir is origin; else false
+  bool getType(){return is_origin;}
   // CONST 0 gate
   static CirGate* Const0;
   
@@ -71,6 +75,7 @@ public:
 private:
   //friend function
   friend void CirGate::connect(map<unsigned,CirGate*>&);
+  friend bool simTwoCir(bool, ofstream*,ifstream*);
   // for parsing
   bool _readInitial(fstream&);
   bool _readPI(fstream&);
@@ -105,6 +110,11 @@ private:
   void _bfs(queue<CirGate*>&);
   void g_dfs(CirGate*,vector<CirGate*>&)const;
   void logout(vector<size_t>&,size_t);
+  void classify();
+  // Two Circuit simulate
+  // classify by the same map or hash
+  void class_by_hash(vector<CirGate*>&,unordered_map<size_t,TwoCirFECP*>&);
+  void class_by_map(vector<CirGate*>&,map<size_t,TwoCirFECP*>&);
 
   bool _doComment;
   string _comment;
@@ -121,8 +131,11 @@ private:
   vector<CirGate*> _bfslist;
   map<unsigned, CirGate*> _gatelist;
   ofstream *_simLog;
-  FECgroups _FECgroups;
+  TwoCirFECG _FECgroups;
+  bool is_origin = true;
 };
 bool compare_gate(CirGate*,CirGate*);
 bool is_inv(size_t,size_t);
+bool simTwoCir(bool, ofstream*,ifstream*);
+
 #endif // CIR_MGR_H

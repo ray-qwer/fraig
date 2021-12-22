@@ -37,10 +37,10 @@ CirGate::reportGate() const
       + (_symbo == "" ? "" : "\"" + _symbo + "\"") + ", line " + to_string(_lineNo);
    cout << s <<  endl;
    string s1 = "= FECs:";
-   if(_fecpair==0||_fecpair->_pairs.size()==1) s+="";
+   if(_fecpair==0||_fecpair->get_o_pairs().size()==1) s+="";
    else{
-      _fecpair->sorting();
-      for(auto i :_fecpair->_pairs){
+      _fecpair->sorting(true);
+      for(auto i :_fecpair->get_o_pairs()){
          string s2 = "";
          if(i == this)continue;
          else{
@@ -156,7 +156,24 @@ CirGate::simulate(){
    setToGlobalRef();
    return _sim;
 }
-
+void 
+TwoCirFECP::sorting(bool is_o){
+   if (is_o){
+      if(o_is_sort) return; 
+      if(_o_pairs.size()==1){
+         o_is_sort = true; return;
+      }
+      sort(_o_pairs.begin(),_o_pairs.end(),compare_CirGate);
+      o_is_sort = true;
+   } else{
+      if(g_is_sort) return;
+      if(_g_pairs.size()==1){
+         g_is_sort = true; return;
+      }
+      sort(_g_pairs.begin(),_g_pairs.end(),compare_CirGate);
+      g_is_sort = true;
+   }
+}
 void
 FECpair::sorting(){
    if(is_sort) return ;
@@ -173,7 +190,31 @@ bool
 compare_CirGate(CirGate* a,CirGate* b){
    return a->getVar()<b->getVar();
 }
-
+void 
+TwoCirFECG::sorting(){
+   if (is_sort) return;
+   for (auto i = _groups.begin();i!=_groups.end();++i){
+      if ((*i)->_o_pairs.size()==1 || (*i)->_g_pairs.size()==1) {
+         bool deleteGroups = false;
+         if((*i)->_o_pairs.empty()){
+            (*i)->_o_pairs[0]->set_FECpair(0);
+            deleteGroups = true;
+         }
+         else if((*i)->_g_pairs.empty()){
+            (*i)->_g_pairs[0]->set_FECpair(0);
+            deleteGroups = true;
+         }
+         if (deleteGroups){
+            i--;
+            _groups.erase(i+1);
+            continue;
+         }
+      }
+      (*i)->sorting(true);
+   }
+   is_sort = true;
+   return;
+}
 void
 FECgroups::sorting(){
    if(is_sort) return;

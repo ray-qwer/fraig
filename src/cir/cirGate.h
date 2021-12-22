@@ -35,6 +35,52 @@ class FECpair
     vector<CirGate*>  _pairs;
     bool is_sort =  false;
 };
+class TwoCirFECP
+{
+  public:
+    TwoCirFECP(){}
+    ~TwoCirFECP(){_g_pairs.clear();_o_pairs.clear();}
+    void append(CirGate* t, bool is_o){
+      if (is_o){
+        _o_pairs.emplace_back(t);
+        o_is_sort = false;
+      }
+      else{
+        _g_pairs.emplace_back(t);
+        g_is_sort = false;
+      }
+      
+    } 
+    void sorting(bool);
+    vector<CirGate*>& get_g_pairs(){return _g_pairs;}
+    vector<CirGate*>& get_o_pairs(){return _o_pairs;}
+    bool get_g_is_sort(){return g_is_sort;}
+    bool get_o_is_sort(){return o_is_sort;}
+  private:
+    friend class TwoCirFECG;
+    friend class CirMgr;
+    vector<CirGate*> _g_pairs;
+    vector<CirGate*> _o_pairs;
+    bool g_is_sort = false;
+    bool o_is_sort = false;
+};
+class TwoCirFECG{
+  public:
+    TwoCirFECG(){}
+    ~TwoCirFECG(){_groups.clear();}
+    bool is_first(){return first_time;}
+    void set_first_time(bool b){first_time = b;}
+    void append(TwoCirFECP* t){_groups.emplace_back(t); is_sort = false;}
+    void sorting();
+    void reset(){_groups.clear(); first_time = true; is_sort = false;}
+  private:
+    // friend function
+    friend class CirMgr;
+    //
+    vector<TwoCirFECP*> _groups;
+    bool first_time = true;
+    bool is_sort = false;
+};
 bool compare_sorted_FECpairs(FECpair*,FECpair*);
 class FECgroups
 { 
@@ -124,7 +170,7 @@ public:
   void reportGate() const;
   void reportFanin(int level);
   void reportFanout(int level);
-  void set_FECpair(FECpair* g){
+  void set_FECpair(TwoCirFECP* g){
     _fecpair = g;
   }
   unsigned getVar() { return _var; }
@@ -161,7 +207,7 @@ protected:
   string _symbo;
 
   bool _inDFSlist;
-  FECpair* _fecpair = 0;
+  TwoCirFECP* _fecpair = 0;
   //pair<FECpair*,bool> _fecpair = pair<FECpair*,bool>(0,false);
 };
 

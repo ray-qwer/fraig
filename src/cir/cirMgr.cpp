@@ -530,12 +530,12 @@ CirMgr::printFECPairs()
    _FECgroups.sorting();
    size_t count = 0;
    for(auto i:_FECgroups._groups){
-      if(i->_pairs.size()>1){
+      if(i->_o_pairs.size()>1){
          cout<<"["<<count<<"]";
          count+=1;
-         for(auto j:i->_pairs){
+         for(auto j:i->_o_pairs){
             cout<<" ";
-            if(is_inv(j->_sim,i->_pairs[0]->_sim)) cout<<"!";
+            if(is_inv(j->_sim,i->_o_pairs[0]->_sim)) cout<<"!";
             cout<<j->getVar();
          }
          cout<<endl;
@@ -727,3 +727,4 @@ bool
 compare_gate(CirGate* a1,CirGate* a2){
    return a1->getVar()<a2->getVar();
 }
+

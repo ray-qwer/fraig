@@ -120,7 +120,11 @@ CirMgr::simulate(vector<size_t>& sim)
   //all gates simulate
   size_t tmp;
   for(size_t i=0;i<_polist.size();i++)  tmp = _polist[i]->simulate();
-  //分類:dfs    map?or hash?
+  classify();
+  // two circuit classify, how??
+}
+void 
+CirMgr::classify(){
   if(_FECgroups.is_first()){
     if(!Const0->_inDFSlist) _dfslist.push_back(Const0);
     class_by_hash(_dfslist);
@@ -131,72 +135,98 @@ CirMgr::simulate(vector<size_t>& sim)
   }
   else{
     for(size_t m  = 0;m<_FECgroups._groups.size();m++){
-      if(_FECgroups._groups[m]->_pairs.size()>100){
+      if(_FECgroups._groups[m]->_o_pairs.size()>100){
         //class_by_hash
-        class_by_hash(_FECgroups._groups[m]->_pairs);
+        class_by_hash(_FECgroups._groups[m]->_o_pairs);
         _FECgroups._groups.erase(_FECgroups._groups.begin()+m);
       }
-      else if(_FECgroups._groups[m]->_pairs.size()==1){
+      else if(_FECgroups._groups[m]->_o_pairs.size()==1){
         continue;
       }
       else{
         //class_by_map
-        class_by_map(_FECgroups._groups[m]->_pairs);
+        class_by_map(_FECgroups._groups[m]->_o_pairs);
         _FECgroups._groups.erase(_FECgroups._groups.begin()+m);
       }
     }
   }
-}
-
+};
 void
 CirMgr::class_by_hash(vector<CirGate*>& list){
-  unordered_map<size_t,FECpair*> Hash;
+  unordered_map<size_t,TwoCirFECP*> Hash;
   for(size_t i =  0;i<list.size();i++){
     if(list[i]->getType()==PI_GATE||list[i]->getType()==PO_GATE)  continue;
     auto m = Hash.find(list[i]->_sim);
     auto n = Hash.find(~list[i]->_sim);
     if(m==Hash.end()&&n==Hash.end()){
-      FECpair* tmp_pair = new FECpair;
-      tmp_pair->append(list[i]);
-      Hash.insert(pair<size_t,FECpair*>(list[i]->_sim,tmp_pair));
+      TwoCirFECP* tmp_pair = new TwoCirFECP;
+      tmp_pair->append(list[i],is_origin);
+      Hash.insert(pair<size_t,TwoCirFECP*>(list[i]->_sim,tmp_pair));
       _FECgroups.append(tmp_pair);
       list[i]->set_FECpair(tmp_pair);
     }
     else if(m!=Hash.end())  {
-      m->second->append(list[i]);
+      m->second->append(list[i],is_origin);
       list[i]->set_FECpair(m->second);
     }
     else{
-      n->second->append(list[i]);
+      n->second->append(list[i],is_origin);
       list[i]->set_FECpair(n->second);
     }    
   }
 }
-
+// TODO:
+// let _FECgroups as an external global varible, just like cirMgr
+void
+CirMgr::class_by_hash(vector<CirGate*>& list,unordered_map<size_t,TwoCirFECP*>& Hash){
+  for (size_t i=0;i<list.size();i++){
+    auto m = Hash.find(list[i]->_sim);
+    auto n = Hash.find(~list[i]->_sim);
+    if ( m==Hash.end() && n==Hash.end() ){
+      TwoCirFECP* tmp_pair = new TwoCirFECP;
+      tmp_pair->append(list[i],is_origin);
+      Hash.insert(pair<size_t,TwoCirFECP*>(list[i]->_sim,tmp_pair));
+      _FECgroups.append(tmp_pair);
+      list[i]->set_FECpair(tmp_pair);
+    }
+    else if(m!=Hash.end())  {
+      m->second->append(list[i],is_origin);
+      list[i]->set_FECpair(m->second);
+    }
+    else{
+      n->second->append(list[i],is_origin);
+      list[i]->set_FECpair(n->second);
+    }    
+  }
+  return;
+}
 void 
 CirMgr::class_by_map(vector<CirGate*>& list){
-  map<size_t,FECpair*> the_map;
+  map<size_t,TwoCirFECP*> the_map;
   for(size_t i =0;i<list.size();i++){
     auto m  = the_map.find(list[i]->_sim);
     auto n = the_map.find(~list[i]->_sim);
     if(m==the_map.end()&&n==the_map.end()){
-      FECpair* tmp_pair = new FECpair;
-      tmp_pair->append(list[i]);
+      TwoCirFECP* tmp_pair = new TwoCirFECP;
+      tmp_pair->append(list[i],is_origin);
       the_map[list[i]->_sim] = tmp_pair;
       _FECgroups.append(tmp_pair);
       list[i]->set_FECpair(tmp_pair);
     }
     else if(m!=the_map.end()) {
-      m->second->append(list[i]);
+      m->second->append(list[i],is_origin);
       list[i]->set_FECpair(m->second);
     }
     else {
-      n->second->append(list[i]);
+      n->second->append(list[i],is_origin);
       list[i]->set_FECpair(n->second);
     }
   }
 }
-
+void 
+CirMgr::class_by_map(vector<CirGate*>& list,map<size_t,TwoCirFECP*>& Map){
+  return;
+}
 void
 CirMgr::logout(vector<size_t>& sim,size_t pattern){
   if(pattern == 0)  pattern = sizeof(size_t)*8;
@@ -215,4 +245,73 @@ CirMgr::logout(vector<size_t>& sim,size_t pattern){
     }
     _simLog->put('\n');
   }
+}
+
+bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
+   // check if all input are the same
+   // if golden is less than original, add some redundant inputs at golden
+   // if more, just random simulate them
+
+   // do compare
+  if (simLog != 0){
+    cirMgr->setSimLog(simLog);
+    cirMgrG->setSimLog(simLog);
+  }
+  if (doRandom){
+    // randomSim
+    size_t input_size = (cirMgrG->_pilist.size()>cirMgr->_pilist.size())?cirMgrG->_pilist.size():cirMgr->_pilist.size();
+    srand(time(NULL));
+    vector<size_t> sim_sizet;
+    sim_sizet.reserve(input_size);
+    for (int i = 0;i<input_size;i++){
+      int a = rand();
+      int b = rand();
+      size_t sim = (((size_t)(unsigned)a) << 31) | (size_t)(unsigned)b;
+      sim_sizet[i] = sim;
+    }
+    cirMgrG->simulate(sim_sizet);
+    cirMgr->simulate(sim_sizet);
+    cirMgrG->do_sim = true; cirMgr->do_sim = true;
+  } else {
+    // file
+    size_t input_size = (cirMgrG->_pilist.size()>cirMgr->_pilist.size())?cirMgrG->_pilist.size():cirMgr->_pilist.size();
+    if (!patternFile->is_open()) { cerr<<"Cannot open file!!"<<endl; return false;}
+    vector<size_t> sim_sizet;
+    sim_sizet.reserve(input_size);
+    size_t pattern = 0;
+    while(patternFile){
+      sim_sizet.resize(input_size,0);
+      for (size_t i = 0;i<sizeof(size_t)*8;i++){
+        string line;
+        if(!getline(*patternFile,line)) break;
+        // if next line is space or nextline, continue
+        if(line[0]=='\0' || line[0]=='\n') continue;
+        if (line.length()==0) break;
+        //
+        for (size_t j = 0;j<cirMgr->_pilist.size();j++){
+          size_t tmp = line[j]-'0';
+          if(tmp>1 || tmp < 0){
+            cerr<<"Error: illegal character("<<line[j]<<")"<<endl;
+            return false;
+          }
+          sim_sizet[j] = sim_sizet[j]<<1 | tmp;
+        }
+        pattern ++ ;      
+      }
+      if(input_size > cirMgr->_pilist.size()){
+        for (size_t j = input_size;j<cirMgr->_pilist.size();j++ ){
+          srand(time(NULL));
+          int a = rand(); int b = rand();
+          size_t sim = (((size_t)(unsigned)a) << 31) | (size_t)(unsigned)b;
+          // pattern % sizeof(size_t)*8: remain
+          if (pattern % sizeof(size_t)*8 == 0 ) sim = sim << (sizeof(size_t)*8-(pattern % sizeof(size_t)*8));
+          sim_sizet[j] = sim;
+        }
+      }
+      cirMgr->simulate(sim_sizet);
+      cirMgrG->simulate(sim_sizet);
+    }
+    cout<<pattern<<" patterns simulated."<<endl;
+  }
+  return true;
 }

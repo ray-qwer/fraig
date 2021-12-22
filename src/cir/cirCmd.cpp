@@ -92,9 +92,9 @@ CirReadCmd::exec(const string& option)
    cout<<(cirMgrG == cirMgr)<<endl;
    CirMgr* tmp;
    if (golden){
-      tmp = cirMgrG;
+      tmp = cirMgrG; tmp->setType(false);
    } else{
-      tmp = cirMgr;
+      tmp = cirMgr; tmp->setType(true);
    }
    
    if (tmp != 0) {
@@ -417,13 +417,11 @@ CirStrashCmd::help() const
 //    CIRSIMulate <-Random | -File <string patternFile>>
 //                [-Output (string logFile)]
 //----------------------------------------------------------------------
+// TODO: do two sim
 CmdExecStatus
 CirSimCmd::exec(const string& option)
 {
-   if (!cirMgr) {
-      cerr << "Error: circuit is not yet constructed!!" << endl;
-      return CMD_EXEC_ERROR;
-   }
+   
    // check option
    vector<string> options;
    CmdExec::lexOptions(option, options);
@@ -431,7 +429,18 @@ CirSimCmd::exec(const string& option)
    ifstream patternFile;
    ofstream logFile;
    bool doRandom = false, doFile = false, doLog = false;
-   for (size_t i = 0, n = options.size(); i < n; ++i) {
+   bool both = false, origin = false;
+   CirMgr* tmp;
+   // options[0]: -o: original -g: golden -b: both
+   if (options.size()<2)   return CmdExec::errorOption(CMD_OPT_ILLEGAL,"not enough variables");
+   
+   if (myStrNCmp("-Original",options[0],2)==0)  origin = true;
+   else if (myStrNCmp("-Golden",options[0],2)==0) origin = false;
+   else if (myStrNCmp("-both",options[0],2)==0) both = true;
+   else return CmdExec::errorOption(CMD_OPT_ILLEGAL,options[1]);
+
+   for (size_t i = 1, n = options.size(); i < n; ++i) {
+      cout<<i<<" "<<options[i]<<endl;
       if (myStrNCmp("-Random", options[i], 2) == 0) {
          if (doRandom || doFile)
             return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[i]);
@@ -464,16 +473,35 @@ CirSimCmd::exec(const string& option)
    if (!doRandom && !doFile)
       return CmdExec::errorOption(CMD_OPT_MISSING, "");
 
+   //
    assert (curCmd != CIRINIT);
-   if (doLog)
-      cirMgr->setSimLog(&logFile);
-   else cirMgr->setSimLog(0);
+   
+   if (!both)  {
+      tmp = origin?(cirMgr):(cirMgrG);
+      if (!tmp) { 
+         cerr << "Error: circuit is not yet constructed!!" << endl;
+         return CMD_EXEC_ERROR;
+      }
+      if (doLog)
+         tmp->setSimLog(&logFile);
+      else tmp->setSimLog(0);
 
-   if (doRandom)
-      cirMgr->randomSim();
-   else
-      cirMgr->fileSim(patternFile);
-   cirMgr->setSimLog(0);
+      if (doRandom)
+         tmp->randomSim();
+      else
+         tmp->fileSim(patternFile);
+      tmp->setSimLog(0);
+   }
+   else {
+      /*call other function*/
+      if (!cirMgr || !cirMgrG){
+         cerr << "Error: circuit is not yet constructed!!" << endl;
+         return CMD_EXEC_ERROR;
+      }
+      simTwoCir(doRandom,(doLog)?(&logFile):0,(doRandom)?0:(&patternFile));
+   }
+   //
+   
    curCmd = CIRSIMULATE;
    
    return CMD_EXEC_DONE;
