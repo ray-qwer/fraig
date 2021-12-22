@@ -691,7 +691,6 @@ CirMgr::_bfs(queue<CirGate*>& _q){
          }
       }
       _q.pop();
-      cout<<"ok"<<endl;
    }
    _bfs(_q);
 }

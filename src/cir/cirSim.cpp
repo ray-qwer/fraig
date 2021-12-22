@@ -18,6 +18,8 @@
 #include <map>
 #include <time.h>
 
+extern CirMgr* original;
+extern CirMgr* golden;
 
 using namespace std;
 
@@ -254,12 +256,12 @@ bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
 
    // do compare
   if (simLog != 0){
-    cirMgr->setSimLog(simLog);
-    cirMgrG->setSimLog(simLog);
+    original->setSimLog(simLog);
+    golden->setSimLog(simLog);
   }
   if (doRandom){
     // randomSim
-    size_t input_size = (cirMgrG->_pilist.size()>cirMgr->_pilist.size())?cirMgrG->_pilist.size():cirMgr->_pilist.size();
+    size_t input_size = (golden->_pilist.size()>original->_pilist.size())?golden->_pilist.size():original->_pilist.size();
     srand(time(NULL));
     vector<size_t> sim_sizet;
     sim_sizet.reserve(input_size);
@@ -269,12 +271,12 @@ bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
       size_t sim = (((size_t)(unsigned)a) << 31) | (size_t)(unsigned)b;
       sim_sizet[i] = sim;
     }
-    cirMgrG->simulate(sim_sizet);
-    cirMgr->simulate(sim_sizet);
-    cirMgrG->do_sim = true; cirMgr->do_sim = true;
+    golden->simulate(sim_sizet);
+    original->simulate(sim_sizet);
+    golden->do_sim = true; original->do_sim = true;
   } else {
     // file
-    size_t input_size = (cirMgrG->_pilist.size()>cirMgr->_pilist.size())?cirMgrG->_pilist.size():cirMgr->_pilist.size();
+    size_t input_size = (golden->_pilist.size()>original->_pilist.size())?golden->_pilist.size():original->_pilist.size();
     if (!patternFile->is_open()) { cerr<<"Cannot open file!!"<<endl; return false;}
     vector<size_t> sim_sizet;
     sim_sizet.reserve(input_size);
@@ -288,7 +290,7 @@ bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
         if(line[0]=='\0' || line[0]=='\n') continue;
         if (line.length()==0) break;
         //
-        for (size_t j = 0;j<cirMgr->_pilist.size();j++){
+        for (size_t j = 0;j<original->_pilist.size();j++){
           size_t tmp = line[j]-'0';
           if(tmp>1 || tmp < 0){
             cerr<<"Error: illegal character("<<line[j]<<")"<<endl;
@@ -298,8 +300,8 @@ bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
         }
         pattern ++ ;      
       }
-      if(input_size > cirMgr->_pilist.size()){
-        for (size_t j = input_size;j<cirMgr->_pilist.size();j++ ){
+      if(input_size > original->_pilist.size()){
+        for (size_t j = input_size;j<original->_pilist.size();j++ ){
           srand(time(NULL));
           int a = rand(); int b = rand();
           size_t sim = (((size_t)(unsigned)a) << 31) | (size_t)(unsigned)b;
@@ -308,8 +310,8 @@ bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
           sim_sizet[j] = sim;
         }
       }
-      cirMgr->simulate(sim_sizet);
-      cirMgrG->simulate(sim_sizet);
+      original->simulate(sim_sizet);
+      golden->simulate(sim_sizet);
     }
     cout<<pattern<<" patterns simulated."<<endl;
   }
