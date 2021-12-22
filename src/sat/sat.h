@@ -45,10 +45,30 @@ class SatSolver
           return;
         }
         for (int i =0; i < varList.size();i++){
-          Lit la = boolList[i]? Lit(varList[i]): ~Lit(varList[i]);
+          Lit la = boolList[i]? ~Lit(varList[i]): Lit(varList[i]);
           lits.push(la);    
         }
         _solver->addClause(lits); lits.clear();
+      }
+
+      void addAndCNF(Var vf, const vector<Var>& varList,const vector<bool>& boolList){
+        vec<Lit> lits;
+        if (varList.size() != boolList.size()){
+          cout<<"AndCNF: "<<varList.size()<<" "<<boolList.size()<<endl;
+          return;
+        }
+        Lit lf = Lit(vf);
+        for (int i = 0; i < varList.size();i++){
+          Lit la = boolList[i]? ~Lit(varList[i]): Lit(varList[i]);
+          lits.push(la); lits.push(~lf);
+         _solver->addClause(lits); lits.clear();
+        }
+        for (int i =0; i < varList.size();i++){
+          Lit la = boolList[i]? ~Lit(varList[i]): Lit(varList[i]);
+          lits.push(~la);
+        }
+        lits.push(lf);
+         _solver->addClause(lits); lits.clear();
       }
 
       void addAigCNF(Var vf, Var va, bool fa, Var vb, bool fb) {

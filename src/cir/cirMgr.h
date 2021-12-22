@@ -23,6 +23,7 @@ using namespace std;
 extern CirMgr *original;
 extern CirMgr *golden;
 
+bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);
 
 // TODO: Define your own data members and member functions
 class CirMgr
@@ -71,6 +72,7 @@ public:
 private:
   //friend function
   friend void CirGate::connect(map<unsigned,CirGate*>&);
+  friend bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);;
   // for parsing
   bool _readInitial(fstream&);
   bool _readPI(fstream&);

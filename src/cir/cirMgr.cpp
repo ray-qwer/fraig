@@ -195,7 +195,17 @@ CirMgr::readCircuit(const string& fileName, bool b)//original==1
 
    // build connect
    if(b){original->_buildConnect();}
-   else{golden->_buildConnect();}   
+   else{golden->_buildConnect();}
+
+   vector<CirGate*> po;
+   for(int i=0;i<original->_polist.size();i++){
+      po.push_back((CirGate*)original->_polist[i]);
+   }
+   vector<CirGate*> hi(0,0);
+   bool work=CutMatching(po,golden->_dfslist,hi);
+   if(work)
+      {cout<<"worked!!!\n";}
+   else{cout<<"???\n";}
    return true;
 }
 
