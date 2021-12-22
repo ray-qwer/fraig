@@ -16,8 +16,9 @@
 
 using namespace std;
 
-extern CirMgr* cirMgr;
-extern CirMgr* cirMgrG;
+
+extern CirMgr* original;
+extern CirMgr* golden;
 extern int effLimit;
 
 bool
@@ -67,21 +68,20 @@ CirReadCmd::exec(const string& option)
    if (options.empty())
       return CmdExec::errorOption(CMD_OPT_MISSING, "");
 
-   bool doReplace = false;
-   bool golden = false;
-
+   bool doReplace_o = false, doReplace_g=false;
    string fileName;
    for (size_t i = 0, n = options.size(); i < n; ++i) {
-      if (myStrNCmp("-Replace", options[i], 2) == 0) {
-         if (doReplace) return CmdExec::errorOption(CMD_OPT_EXTRA,options[i]);
-         doReplace = true;
+      // if (myStrNCmp("-Replace", options[i], 2) == 0) {
+      //    if (doReplace) return CmdExec::errorOption(CMD_OPT_EXTRA,options[i]);
+      //    doReplace = true;
+      // }
+      if (myStrNCmp("-Original", options[i], 2) == 0) {
+         if (doReplace_o) return CmdExec::errorOption(CMD_OPT_EXTRA,options[i]);
+         doReplace_o = true;
       }
-      else if (myStrNCmp("-Golden",options[i],2)==0 && !golden){
-         golden = true;
-      }
-      else if(myStrNCmp("-Origin",options[i],2)==0){
-         if (golden) return CmdExec::errorOption(CMD_OPT_EXTRA,options[i]);
-         golden = false;
+      else if (myStrNCmp("-Golden", options[i], 2) == 0) {
+         if (doReplace_g) return CmdExec::errorOption(CMD_OPT_EXTRA,options[i]);
+         doReplace_g = true;
       }
       else {
          if (fileName.size())
@@ -89,36 +89,66 @@ CirReadCmd::exec(const string& option)
          fileName = options[i];
       }
    }
-   cout<<(cirMgrG == cirMgr)<<endl;
-   CirMgr* tmp;
-   if (golden){
-      tmp = cirMgrG; tmp->setType(false);
-   } else{
-      tmp = cirMgr; tmp->setType(true);
-   }
-   
-   if (tmp != 0) {
-      if (doReplace) {
+
+   if (original != 0) {
+      if (doReplace_o) {
          cerr << "Note: original circuit is replaced..." << endl;
          curCmd = CIRINIT;
-         delete tmp; tmp = 0;
+         delete original; original = 0;
+         original = new CirMgr;
+         if (!original->readCircuit(fileName)) {
+            curCmd = CIRINIT;
+            delete original; original = 0;
+            return CMD_EXEC_ERROR;
+         }
       }
-      else {
-         cerr << "Error: circuit already exists!!" << endl;
+      else if(!doReplace_g) {
+         cerr << "Error: original circuit already exists!!" << endl;
          return CMD_EXEC_ERROR;
       }
    }
-   tmp = new CirMgr;
-
-   if (!tmp->readCircuit(fileName)) {
-      curCmd = CIRINIT;
-      delete tmp; tmp = 0;
-      return CMD_EXEC_ERROR;
+   else if(!doReplace_g){
+      original = new CirMgr;
+      if (!original->readCircuit(fileName)) {
+         curCmd = CIRINIT;
+         delete original; original = 0;
+         return CMD_EXEC_ERROR;
+      } 
    }
 
+
+
+   if (golden != 0) {
+      if (doReplace_g) {
+         cerr << "Note: golden circuit is replaced..." << endl;
+         curCmd = CIRINIT;
+         delete golden; golden = 0;
+         golden = new CirMgr;
+         if (!golden->readCircuit(fileName, 0)) {
+            curCmd = CIRINIT;
+            delete golden; golden = 0;
+            return CMD_EXEC_ERROR;
+         }
+      }
+      else if(!doReplace_o){
+         cerr << "Error: golden circuit already exists!!" << endl;
+         return CMD_EXEC_ERROR;
+      }
+   }
+   else if(!doReplace_o){
+      golden = new CirMgr;
+      if (!golden->readCircuit(fileName, 0)) {
+         curCmd = CIRINIT;
+         delete golden; golden = 0;
+         return CMD_EXEC_ERROR;
+      }
+   }
+
+
+
+
+
    curCmd = CIRREAD;
-   if (golden) cirMgrG = tmp;
-   else     cirMgr = tmp;
    return CMD_EXEC_DONE;
 }
 
@@ -148,44 +178,13 @@ CirPrintCmd::exec(const string& option)
    CirMgr* tmp;
    if (!CmdExec::lexOptions(option, options))
       return CMD_EXEC_ERROR;
-   if (options.empty())
-      return CmdExec::errorOption(CMD_OPT_MISSING,"");
-   for (size_t i = 0, n =options.size();i<n;++i){
-      if(myStrNCmp("-Golden",options[i],2)==0){
-         golden = true;
-         if (n == 1) token ="";
-      }
-      else if (myStrNCmp("-Origin",options[i],2)==0){
-         golden = false;
-         if (n == 1) token = "";
-      } else{
-         if (n == 1) return CmdExec::errorOption(CMD_OPT_MISSING,"<-Golden|-Origin>");
-         else if (n == 2) token = options[i];
-         else return CmdExec::errorOption(CMD_OPT_EXTRA,options[i]);
-      }
-   }
-   if (golden) tmp = cirMgrG;
-   else tmp = cirMgr;   
-   cout<<(cirMgrG == cirMgr) <<endl; 
-   if (!tmp) {
+
+   if (!original) {
       cerr << "Error: circuit is not yet constructed!!" << endl;
       return CMD_EXEC_ERROR;
    }
    
    if (token.empty() || myStrNCmp("-Summary", token, 2) == 0)
-      tmp->printSummary();
-   else if (myStrNCmp("-Netlist", token, 2) == 0)
-      tmp->printNetlist();
-   else if (myStrNCmp("-PI", token, 3) == 0)
-      tmp->printPIs();
-   else if (myStrNCmp("-PO", token, 3) == 0)
-      tmp->printPOs();
-   else if (myStrNCmp("-FLoating", token, 3) == 0)
-      tmp->printFloatGates();
-   else if (myStrNCmp("-FECpairs", token, 4) == 0)
-      tmp->printFECPairs();
-   else
-      return CmdExec::errorOption(CMD_OPT_ILLEGAL, token);
 
    return CMD_EXEC_DONE;
 }
@@ -196,7 +195,6 @@ CirPrintCmd::usage(ostream& os) const
    os << "Usage: CIRPrint [-Summary | -Netlist | -PI | -PO | -FLoating "
       << "| -FECpairs]" << endl;
 }
-
 void
 CirPrintCmd::help() const
 {  
@@ -209,7 +207,7 @@ CirPrintCmd::help() const
 CmdExecStatus
 CirGateCmd::exec(const string& option)
 {
-   if (!cirMgr) {
+   if (!original) {
       cerr << "Error: circuit has not been read!!" << endl;
       return CMD_EXEC_ERROR;
    }
@@ -242,7 +240,7 @@ CirGateCmd::exec(const string& option)
       else if (!thisGate) {
          if (!myStr2Int(options[i], gateId) || gateId < 0)
             return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[i]);
-         thisGate = cirMgr->getGate(gateId);
+         thisGate = original->getGate(gateId);
          if (!thisGate) {
             cerr << "Error: Gate(" << gateId << ") not found!!" << endl;
             return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[0]);
@@ -295,7 +293,7 @@ CirGateCmd::help() const
 CmdExecStatus
 CirSweepCmd::exec(const string& option)
 {
-   if (!cirMgr) {
+   if (!original) {
       cerr << "Error: circuit is not yet constructed!!" << endl;
       return CMD_EXEC_ERROR;
    }
@@ -307,7 +305,7 @@ CirSweepCmd::exec(const string& option)
       return CmdExec::errorOption(CMD_OPT_EXTRA, options[0]);
 
    assert(curCmd != CIRINIT);
-   cirMgr->sweep();
+   original->sweep();
 
    return CMD_EXEC_DONE;
 }
@@ -331,7 +329,7 @@ CirSweepCmd::help() const
 CmdExecStatus
 CirOptCmd::exec(const string& option)
 {
-   if (!cirMgr) {
+   if (!original) {
       cerr << "Error: circuit is not yet constructed!!" << endl;
       return CMD_EXEC_ERROR;
    }
@@ -348,7 +346,7 @@ CirOptCmd::exec(const string& option)
            << endl;
       return CMD_EXEC_ERROR;
    }
-   cirMgr->optimize();
+   original->optimize();
    curCmd = CIROPT;
 
    return CMD_EXEC_DONE;
@@ -373,7 +371,7 @@ CirOptCmd::help() const
 CmdExecStatus
 CirStrashCmd::exec(const string& option)
 {
-   if (!cirMgr) {
+   if (!original) {
       cerr << "Error: circuit is not yet constructed!!" << endl;
       return CMD_EXEC_ERROR;
    }
@@ -394,7 +392,7 @@ CirStrashCmd::exec(const string& option)
            << endl;
       return CMD_EXEC_ERROR;
    }
-   cirMgr->strash();
+   original->strash();
    curCmd = CIRSTRASH;
 
    return CMD_EXEC_DONE;
@@ -421,7 +419,10 @@ CirStrashCmd::help() const
 CmdExecStatus
 CirSimCmd::exec(const string& option)
 {
-   
+   if (!original) {
+      cerr << "Error: circuit is not yet constructed!!" << endl;
+      return CMD_EXEC_ERROR;
+   }
    // check option
    vector<string> options;
    CmdExec::lexOptions(option, options);
@@ -475,33 +476,15 @@ CirSimCmd::exec(const string& option)
 
    //
    assert (curCmd != CIRINIT);
-   
-   if (!both)  {
-      tmp = origin?(cirMgr):(cirMgrG);
-      if (!tmp) { 
-         cerr << "Error: circuit is not yet constructed!!" << endl;
-         return CMD_EXEC_ERROR;
-      }
-      if (doLog)
-         tmp->setSimLog(&logFile);
-      else tmp->setSimLog(0);
+   if (doLog)
+      original->setSimLog(&logFile);
+   else original->setSimLog(0);
 
-      if (doRandom)
-         tmp->randomSim();
-      else
-         tmp->fileSim(patternFile);
-      tmp->setSimLog(0);
-   }
-   else {
-      /*call other function*/
-      if (!cirMgr || !cirMgrG){
-         cerr << "Error: circuit is not yet constructed!!" << endl;
-         return CMD_EXEC_ERROR;
-      }
-      simTwoCir(doRandom,(doLog)?(&logFile):0,(doRandom)?0:(&patternFile));
-   }
-   //
-   
+   if (doRandom)
+      original->randomSim();
+   else
+      original->fileSim(patternFile);
+   original->setSimLog(0);
    curCmd = CIRSIMULATE;
    
    return CMD_EXEC_DONE;
@@ -527,7 +510,7 @@ CirSimCmd::help() const
 CmdExecStatus
 CirFraigCmd::exec(const string& option)
 {
-   if (!cirMgr) {
+   if (!original) {
       cerr << "Error: circuit is not yet constructed!!" << endl;
       return CMD_EXEC_ERROR;
    }
@@ -542,7 +525,7 @@ CirFraigCmd::exec(const string& option)
       cerr << "Error: circuit is not yet simulated!!" << endl;
       return CMD_EXEC_ERROR;
    }
-   cirMgr->fraig();
+   original->fraig();
    curCmd = CIRFRAIG;
 
    return CMD_EXEC_DONE;
@@ -567,7 +550,7 @@ CirFraigCmd::help() const
 CmdExecStatus
 CirWriteCmd::exec(const string& option)
 {
-   if (!cirMgr) {
+   if (!original) {
       cerr << "Error: circuit is not yet constructed!!" << endl;
       return CMD_EXEC_ERROR;
    }
@@ -576,7 +559,7 @@ CirWriteCmd::exec(const string& option)
    CmdExec::lexOptions(option, options);
 
    if (options.empty()) {
-      cirMgr->writeAag(cout);
+      original->writeAag(cout);
       return CMD_EXEC_DONE;
    }
    bool hasFile = false;
@@ -597,7 +580,7 @@ CirWriteCmd::exec(const string& option)
       else if (myStr2Int(options[i], gateId) && gateId >= 0) {
          if (thisGate != NULL)
             return CmdExec::errorOption(CMD_OPT_EXTRA, options[i]);
-         thisGate = cirMgr->getGate(gateId);
+         thisGate = original->getGate(gateId);
          if (!thisGate) {
             cerr << "Error: Gate(" << gateId << ") not found!!" << endl;
             return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[i]);
@@ -612,10 +595,10 @@ CirWriteCmd::exec(const string& option)
 
    if (!thisGate) {
       assert (hasFile);
-      cirMgr->writeAag(outfile);
+      original->writeAag(outfile);
    }
-   else if (hasFile) cirMgr->writeGate(outfile, thisGate);
-   else cirMgr->writeGate(cout, thisGate);
+   else if (hasFile) original->writeGate(outfile, thisGate);
+   else original->writeGate(cout, thisGate);
 
    return CMD_EXEC_DONE;
 }

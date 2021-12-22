@@ -26,8 +26,8 @@ using namespace std;
 /*******************************/
 /*   Global variable and enum  */
 /*******************************/
-CirMgr* cirMgr = 0;
-CirMgr* cirMgrG = 0;
+CirMgr* original = 0;
+CirMgr* golden=0;
 CirGate* CirMgr::Const0 = new CirGate(0, 0, CONST_GATE);
 
 enum CirParseError {
@@ -174,6 +174,39 @@ CirMgr::readCircuit(const string& fileName)
 
    // build connect
    _buildConnect();
+   return true;
+}
+
+bool
+CirMgr::readCircuit(const string& fileName, bool b)//original==1
+{
+   fstream file(fileName.c_str());
+   if (!file) { cerr << "Cannot open design \"" << fileName << "\"!!" << endl; return false; }
+   
+   if (!_readInitial(file)) return false; // will get _type _M _I _L _O _A
+   if (!_readPI(file)) return false; // get PIs
+   if (!_readPO(file)) return false; // get POs
+   if (!_readAIG(file)) return false; // get AIGs
+   if (!_readSymb(file)) return false; // read symb
+   if (_doComment) {
+      char ch;
+      while (file.get(ch)) _comment += ch;
+   }
+   file.close();
+
+   // build connect
+   if(b){original->_buildConnect();}
+   else{golden->_buildConnect();}
+
+   vector<CirGate*> po;
+   for(int i=0;i<original->_polist.size();i++){
+      po.push_back((CirGate*)original->_polist[i]);
+   }
+   vector<CirGate*> hi(0,0);
+   bool work=CutMatching(po,golden->_dfslist,hi);
+   if(work)
+      {cout<<"worked!!!\n";}
+   else{cout<<"???\n";}
    return true;
 }
 

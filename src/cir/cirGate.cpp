@@ -22,7 +22,8 @@ using namespace std;
 //       "CirGate::reportFanout()" for cir cmds. Feel free to define
 //       your own variables and functions.
 
-extern CirMgr *cirMgr;
+extern CirMgr *original;
+extern CirMgr *golden;
 
 /**************************************/
 /*   class CirGate member functions   */

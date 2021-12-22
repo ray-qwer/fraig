@@ -22,9 +22,10 @@ using namespace std;
 #include "cirGate.h"
 #include "cirDef.h"
 
-extern CirMgr *cirMgr;
-extern CirMgr *cirMgrG;
+extern CirMgr *original;
+extern CirMgr *golden;
 
+bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);
 
 // TODO: Define your own data members and member functions
 class CirMgr
@@ -42,6 +43,7 @@ public:
 
   // Member functions about circuit construction
   bool readCircuit(const string&);
+  bool readCircuit(const string&, bool);
 
   // Member functions about circuit reporting
   void printSummary() const;
@@ -76,6 +78,7 @@ private:
   //friend function
   friend void CirGate::connect(map<unsigned,CirGate*>&);
   friend bool simTwoCir(bool, ofstream*,ifstream*);
+  friend bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);;
   // for parsing
   bool _readInitial(fstream&);
   bool _readPI(fstream&);
