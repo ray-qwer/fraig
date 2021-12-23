@@ -24,7 +24,7 @@ using namespace std;
 
 extern CirMgr *original;
 extern CirMgr *golden;
-
+TwoCirFECG _FECgroups;
 /**************************************/
 /*   class CirGate member functions   */
 /**************************************/
@@ -37,26 +37,47 @@ CirGate::reportGate() const
    string s = "= " + getTypeStr() + "(" + to_string(_var) + ")" \
       + (_symbo == "" ? "" : "\"" + _symbo + "\"") + ", line " + to_string(_lineNo);
    cout << s <<  endl;
-   string s1 = "= FECs:";
-   if(_fecpair==0||_fecpair->get_o_pairs().size()==1) s+="";
+   string s1 = "= Origin:";
+   if (_fecpair==0) s+=" no fecpair";
+   else if(_fecpair->get_o_pairs().size()==1) s+="";
    else{
       _fecpair->sorting(true);
       for(auto i :_fecpair->get_o_pairs()){
-         string s2 = "";
+         string tmp = "";
          if(i == this)continue;
          else{
-            s2 +=" ";
-            if(is_inv(_sim,i->_sim)) s2+="!";
-            s2+=to_string(i->getVar()); 
+            tmp +=" ";
+            if(is_inv(_sim,i->_sim)) tmp+="!";
+            tmp+=to_string(i->getVar()); 
          }
-         if(s1.length()+s2.length()<80)   s1 = s1+s2;
+         if(s1.length()+tmp.length()<80)   s1 = s1+tmp;
          else{
             cout<<s1<<endl;
-            s1 = s2.substr(1);
+            s1 = tmp.substr(1);
          }
       }
    }
    cout<<s1<<endl;
+   string s2 = "= Golden:";
+   if (_fecpair==0) s+=" no fecpair";
+   else{
+      _fecpair->sorting(false);
+      for(auto i :_fecpair->get_g_pairs()){
+         string tmp = "";
+         if(i == this)continue;
+         else{
+            tmp +=" ";
+            if(is_inv(_sim,i->_sim)) tmp+="!";
+            tmp+=to_string(i->getVar()); 
+         }
+         if(s2.length()+tmp.length()<80)   s2 = s2+tmp;
+         else{
+            cout<<s2<<endl;
+            s2 = tmp.substr(1);
+         }
+      }
+   }
+   cout<<s2<<endl;
    s = "= Value: ";
    size_t si = _sim;
    for(size_t i =0 ; i< sizeof(size_t)*8;i++){

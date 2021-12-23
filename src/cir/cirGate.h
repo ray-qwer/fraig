@@ -18,10 +18,17 @@
 
 
 using namespace std;
-
+class TwoCirFECG;
+class TwoCirFECP;
+class CirGate;
+class CirPiGate;
+class CirPoGate;
+class CirAigGate;
+class CirGateV;
 //------------------------------------------------------------------------
 //   Define classes
 //------------------------------------------------------------------------
+extern TwoCirFECG _FECgroups;
 bool compare_CirGate(CirGate*,CirGate*);
 class FECpair
 {
@@ -58,6 +65,7 @@ class TwoCirFECP
     bool get_o_is_sort(){return o_is_sort;}
   private:
     friend class TwoCirFECG;
+    friend void classifyTwoCir();
     friend class CirMgr;
     vector<CirGate*> _g_pairs;
     vector<CirGate*> _o_pairs;
@@ -73,9 +81,11 @@ class TwoCirFECG{
     void append(TwoCirFECP* t){_groups.emplace_back(t); is_sort = false;}
     void sorting();
     void reset(){_groups.clear(); first_time = true; is_sort = false;}
+    size_t get_groups_size(){return _groups.size();}
   private:
     // friend function
     friend class CirMgr;
+    friend void classifyTwoCir();
     //
     vector<TwoCirFECP*> _groups;
     bool first_time = true;
@@ -102,11 +112,7 @@ class FECgroups
     bool is_sort = false;
 };
 
-class CirGate;
-class CirPiGate;
-class CirPoGate;
-class CirAigGate;
-class CirGateV;
+
 class CirGateV {
   public:
   friend class CirGate;
@@ -149,6 +155,8 @@ public:
   //friend function
   friend class CirMgr;
   friend class CirGateV;
+  friend void classifyTwoCir();
+
   // Basic access methods
   string getTypeStr() const {
     switch(_gateType) {

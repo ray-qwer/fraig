@@ -24,7 +24,7 @@ using namespace std;
 
 extern CirMgr *original;
 extern CirMgr *golden;
-
+extern TwoCirFECG _FECgroups;
 bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);
 
 // TODO: Define your own data members and member functions
@@ -78,6 +78,7 @@ private:
   //friend function
   friend void CirGate::connect(map<unsigned,CirGate*>&);
   friend bool simTwoCir(bool, ofstream*,ifstream*);
+  friend void classifyTwoCir();
   friend bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);;
   // for parsing
   bool _readInitial(fstream&);
@@ -107,8 +108,8 @@ private:
     genDFSList();  
   }
   void simulate(vector<size_t>&);
-  void class_by_hash(vector<CirGate*>&);
-  void class_by_map(vector<CirGate*>&);
+  // void class_by_hash(vector<CirGate*>&);
+  // void class_by_map(vector<CirGate*>&);
   void _dfs(CirGate*);
   void _bfs(queue<CirGate*>&);
   void g_dfs(CirGate*,vector<CirGate*>&)const;
@@ -134,11 +135,10 @@ private:
   vector<CirGate*> _bfslist;
   map<unsigned, CirGate*> _gatelist;
   ofstream *_simLog;
-  TwoCirFECG _FECgroups;
   bool is_origin = true;
 };
 bool compare_gate(CirGate*,CirGate*);
 bool is_inv(size_t,size_t);
 bool simTwoCir(bool, ofstream*,ifstream*);
-
+void classifyTwoCir();
 #endif // CIR_MGR_H

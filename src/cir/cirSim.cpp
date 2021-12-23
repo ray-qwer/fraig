@@ -20,7 +20,7 @@
 
 extern CirMgr* original;
 extern CirMgr* golden;
-
+extern TwoCirFECG _FECgroups;
 using namespace std;
 
 // TODO: Keep "CirMgr::randimSim()" and "CirMgr::fileSim()" for cir cmd.
@@ -58,6 +58,7 @@ CirMgr::randomSim()
     }
     pattern += 64;
     simulate(sim_sizet);
+    classify();
     if(_simLog!=0)  logout(sim_sizet,pattern%64); 
     if(_FECgroups._groups.size()==num_of_pairs)
       pairs_count++;
@@ -101,6 +102,7 @@ CirMgr::fileSim(ifstream& patternFile)
       pattern++;
     }
     simulate(sim_sizet);
+    classify();
     if(_simLog!=0)  logout(sim_sizet,pattern%64); 
   }
   cout<<pattern<<" patterns simulated."<<endl;
@@ -122,7 +124,6 @@ CirMgr::simulate(vector<size_t>& sim)
   //all gates simulate
   size_t tmp;
   for(size_t i=0;i<_polist.size();i++)  tmp = _polist[i]->simulate();
-  classify();
   // two circuit classify, how??
 }
 void 
@@ -156,53 +157,7 @@ CirMgr::classify(){
     }
   }
 };
-// void
-// CirMgr::class_by_hash(vector<CirGate*>& list){
-//   unordered_map<size_t,TwoCirFECP*> Hash;
-//   for(size_t i =  0;i<list.size();i++){
-//     if(list[i]->getType()==PI_GATE||list[i]->getType()==PO_GATE)  continue;
-//     auto m = Hash.find(list[i]->_sim);
-//     auto n = Hash.find(~list[i]->_sim);
-//     if(m==Hash.end()&&n==Hash.end()){
-//       TwoCirFECP* tmp_pair = new TwoCirFECP;
-//       tmp_pair->append(list[i],is_origin);
-//       Hash.insert(pair<size_t,TwoCirFECP*>(list[i]->_sim,tmp_pair));
-//       _FECgroups.append(tmp_pair);
-//       list[i]->set_FECpair(tmp_pair);
-//     }
-//     else if(m!=Hash.end())  {
-//       m->second->append(list[i],is_origin);
-//       list[i]->set_FECpair(m->second);
-//     }
-//     else{
-//       n->second->append(list[i],is_origin);
-//       list[i]->set_FECpair(n->second);
-//     }    
-//   }
-// }
-// void 
-// CirMgr::class_by_map(vector<CirGate*>& list){
-//   map<size_t,TwoCirFECP*> the_map;
-//   for(size_t i =0;i<list.size();i++){
-//     auto m  = the_map.find(list[i]->_sim);
-//     auto n = the_map.find(~list[i]->_sim);
-//     if(m==the_map.end()&&n==the_map.end()){
-//       TwoCirFECP* tmp_pair = new TwoCirFECP;
-//       tmp_pair->append(list[i],is_origin);
-//       the_map[list[i]->_sim] = tmp_pair;
-//       _FECgroups.append(tmp_pair);
-//       list[i]->set_FECpair(tmp_pair);
-//     }
-//     else if(m!=the_map.end()) {
-//       m->second->append(list[i],is_origin);
-//       list[i]->set_FECpair(m->second);
-//     }
-//     else {
-//       n->second->append(list[i],is_origin);
-//       list[i]->set_FECpair(n->second);
-//     }
-//   }
-// }
+
 void
 CirMgr::logout(vector<size_t>& sim,size_t pattern){
   if(pattern == 0)  pattern = sizeof(size_t)*8;
@@ -270,7 +225,7 @@ CirMgr::class_by_map(vector<CirGate*>& list,map<size_t,TwoCirFECP*>& Map){
   }
   return;
 }
-
+// two circuit simulate -> classify -> sorting
 bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
    // check if all input are the same
    // if golden is less than original, add some redundant inputs at golden
@@ -283,19 +238,39 @@ bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
   }
   if (doRandom){
     // randomSim
-    size_t input_size = (golden->_pilist.size()>original->_pilist.size())?golden->_pilist.size():original->_pilist.size();
     srand(time(NULL));
+    // parameters
+    size_t input_size = (golden->_pilist.size()>original->_pilist.size())?golden->_pilist.size():original->_pilist.size();
     vector<size_t> sim_sizet;
+    size_t test_times = (2>input_size/64)?2:input_size/16;
+    size_t pairs_count = 0;
+    size_t pattern = 0;
+    size_t num_of_pairs = _FECgroups.get_groups_size();
+    // 
     sim_sizet.reserve(input_size);
-    for (int i = 0;i<input_size;i++){
-      int a = rand();
-      int b = rand();
-      size_t sim = (((size_t)(unsigned)a) << 31) | (size_t)(unsigned)b;
-      sim_sizet[i] = sim;
+    // cout<<"initial "<<_FECgroups.get_groups_size()<<endl;
+    while(pairs_count < test_times){
+      sim_sizet.resize(input_size,0);
+      for (int i = 0;i<input_size;i++){
+        int a = rand();
+        int b = rand();
+        size_t sim = (((size_t)(unsigned)a) << 31) | (size_t)(unsigned)b;
+        sim_sizet[i] = sim;
+      }
+      original->simulate(sim_sizet);
+      golden->simulate(sim_sizet);
+      classifyTwoCir();
+      pattern+=64;
+      // cout<<"groups count "<<_FECgroups.get_groups_size()<<endl;
+      if(_FECgroups.get_groups_size()==num_of_pairs)
+        pairs_count ++;
+      else{
+        pairs_count = 0;
+        num_of_pairs = _FECgroups.get_groups_size();
+      }
     }
-    golden->simulate(sim_sizet);
-    original->simulate(sim_sizet);
     golden->do_sim = true; original->do_sim = true;
+    cout<<pattern<<" patterns simulated."<<endl;
   } else {
     // file
     size_t input_size = (golden->_pilist.size()>original->_pilist.size())?golden->_pilist.size():original->_pilist.size();
@@ -334,8 +309,74 @@ bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
       }
       original->simulate(sim_sizet);
       golden->simulate(sim_sizet);
+      classifyTwoCir();
+      original->do_sim = true; golden->do_sim = true;
     }
     cout<<pattern<<" patterns simulated."<<endl;
   }
+  
   return true;
+}
+void
+classifyTwoCir(){
+  // use the same Map or Hash
+  if (_FECgroups.is_first()){
+    unordered_map<size_t,TwoCirFECP*> Hash;
+    original->class_by_hash(original->_dfslist,Hash);
+    golden->class_by_hash(golden->_dfslist,Hash);
+    _FECgroups.first_time = false;
+  } else {
+    // rewrite
+    size_t groups_size = _FECgroups._groups.size();
+    size_t count = 0;
+    auto m = _FECgroups._groups.begin();
+    while (count < groups_size){
+      count += 1;
+      if ((*m)->_o_pairs.size() == 1 && (*m)->_g_pairs.size()==1){
+        // check two simulation is the same?
+        if ((*m)->_o_pairs[0]->_sim == (*m)->_g_pairs[0]->_sim) m++;
+        else {
+          // not match
+          (*m)->_o_pairs[0]->set_FECpair(0);  (*m)->_g_pairs[0]->set_FECpair(0);
+          TwoCirFECP* tmp = (*m);
+          m = _FECgroups._groups.erase(m);
+          delete tmp;
+
+        }
+      }
+      else if ((*m)->_g_pairs.empty()){
+        for (auto o = (*m)->_o_pairs.begin();o != (*m)->_o_pairs.end(); o++)
+          (*o)->set_FECpair(0);
+        TwoCirFECP* tmp = (*m);
+        m = _FECgroups._groups.erase(m);
+        delete tmp;
+      }
+      else if ((*m)->_o_pairs.empty()){
+        for (auto g = (*m)->_g_pairs.begin();g != (*m)->_g_pairs.end(); g++)
+          (*g)->set_FECpair(0);
+        TwoCirFECP* tmp = (*m);
+        m = _FECgroups._groups.erase(m);
+        delete tmp;
+      }
+      else{
+        if ((*m)->_g_pairs.size()>100 || (*m)->_o_pairs.size()>100){
+          // Hash
+          unordered_map<size_t,TwoCirFECP*> Hash;
+          original->class_by_hash((*m)->_o_pairs,Hash);
+          golden->class_by_hash((*m)->_g_pairs,Hash);
+          TwoCirFECP* tmp = (*m);
+          m = _FECgroups._groups.erase(m);
+          delete tmp;
+        } else {
+          // Map
+          map<size_t,TwoCirFECP*> Map;
+          original->class_by_map((*m)->_o_pairs,Map);
+          golden->class_by_map((*m)->_g_pairs,Map);
+          TwoCirFECP* tmp = (*m);
+          m = _FECgroups._groups.erase(m);
+          delete tmp;
+        }
+      }
+    }
+  }
 }

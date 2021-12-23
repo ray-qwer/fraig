@@ -480,15 +480,41 @@ CirSimCmd::exec(const string& option)
 
    //
    assert (curCmd != CIRINIT);
-   if (doLog)
-      original->setSimLog(&logFile);
-   else original->setSimLog(0);
+   if (!both)  {
+      CirMgr* tmp;
+      tmp = origin?(original):(golden);
+      if (!tmp) { 
+         cerr << "Error: circuit is not yet constructed!!" << endl;
+         return CMD_EXEC_ERROR;
+      }
+      if (doLog)
+         tmp->setSimLog(&logFile);
+      else tmp->setSimLog(0);
+      if (doRandom)
+         tmp->randomSim();
+      else
+         tmp->fileSim(patternFile);
+      tmp->setSimLog(0);
+   }
+   else {
+      /*call other function*/
+      if (!original || !golden){
+         cerr << "Error: circuit is not yet constructed!!" << endl;
+         return CMD_EXEC_ERROR;
+      }
+      simTwoCir(doRandom,(doLog)?(&logFile):0,(doRandom)?0:(&patternFile));
+   }
+   
+   
+   // if (doLog)
+   //    original->setSimLog(&logFile);
+   // else original->setSimLog(0);
 
-   if (doRandom)
-      original->randomSim();
-   else
-      original->fileSim(patternFile);
-   original->setSimLog(0);
+   // if (doRandom)
+   //    original->randomSim();
+   // else
+   //    original->fileSim(patternFile);
+   // original->setSimLog(0);
    curCmd = CIRSIMULATE;
    
    return CMD_EXEC_DONE;
