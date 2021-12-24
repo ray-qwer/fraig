@@ -341,15 +341,19 @@ classifyTwoCir(){
           TwoCirFECP* tmp = (*m);
           m = _FECgroups._groups.erase(m);
           delete tmp;
-
+          // cout<<"del1"<<endl;
         }
       }
       else if ((*m)->_g_pairs.empty()){
-        for (auto o = (*m)->_o_pairs.begin();o != (*m)->_o_pairs.end(); o++)
+        for (auto o = (*m)->_o_pairs.begin();o != (*m)->_o_pairs.end(); o++){
           (*o)->set_FECpair(0);
+          // cout<<((*o)->_fecpair)<<endl;
+        }
+
         TwoCirFECP* tmp = (*m);
         m = _FECgroups._groups.erase(m);
         delete tmp;
+        // cout<<"del2"<<endl;
       }
       else if ((*m)->_o_pairs.empty()){
         for (auto g = (*m)->_g_pairs.begin();g != (*m)->_g_pairs.end(); g++)
@@ -357,6 +361,7 @@ classifyTwoCir(){
         TwoCirFECP* tmp = (*m);
         m = _FECgroups._groups.erase(m);
         delete tmp;
+        // cout<<"del3"<<endl;
       }
       else{
         if ((*m)->_g_pairs.size()>100 || (*m)->_o_pairs.size()>100){
@@ -367,6 +372,7 @@ classifyTwoCir(){
           TwoCirFECP* tmp = (*m);
           m = _FECgroups._groups.erase(m);
           delete tmp;
+          // cout<<"hash"<<endl;
         } else {
           // Map
           map<size_t,TwoCirFECP*> Map;
@@ -375,6 +381,7 @@ classifyTwoCir(){
           TwoCirFECP* tmp = (*m);
           m = _FECgroups._groups.erase(m);
           delete tmp;
+          // cout<<"map"<<endl;
         }
       }
     }

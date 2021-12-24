@@ -33,12 +33,13 @@ unsigned CirGate::_globalRef = 0;
 void
 CirGate::reportGate() const
 {
+   // cout<<"fecpair "<<_fecpair<<endl;
    cout <<"================================================================================"<< endl;
    string s = "= " + getTypeStr() + "(" + to_string(_var) + ")" \
       + (_symbo == "" ? "" : "\"" + _symbo + "\"") + ", line " + to_string(_lineNo);
    cout << s <<  endl;
    string s1 = "= Origin:";
-   if (_fecpair==0) s+=" no fecpair";
+   if (_fecpair==0) s1+=" no fecpair";
    else if(_fecpair->get_o_pairs().size()==1) s+="";
    else{
       _fecpair->sorting(true);
@@ -59,7 +60,7 @@ CirGate::reportGate() const
    }
    cout<<s1<<endl;
    string s2 = "= Golden:";
-   if (_fecpair==0) s+=" no fecpair";
+   if (_fecpair==0) s2+=" no fecpair";
    else{
       _fecpair->sorting(false);
       for(auto i :_fecpair->get_g_pairs()){

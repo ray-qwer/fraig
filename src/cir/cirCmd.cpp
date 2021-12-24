@@ -445,7 +445,7 @@ CirSimCmd::exec(const string& option)
    else return CmdExec::errorOption(CMD_OPT_ILLEGAL,options[1]);
 
    for (size_t i = 1, n = options.size(); i < n; ++i) {
-      cout<<i<<" "<<options[i]<<endl;
+      // cout<<i<<" "<<options[i]<<endl;
       if (myStrNCmp("-Random", options[i], 2) == 0) {
          if (doRandom || doFile)
             return CmdExec::errorOption(CMD_OPT_ILLEGAL, options[i]);
