@@ -79,7 +79,7 @@ private:
   friend void CirGate::connect(map<unsigned,CirGate*>&);
   friend bool simTwoCir(bool, ofstream*,ifstream*);
   friend void classifyTwoCir();
-  friend bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);;
+  friend bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);
   // for parsing
   bool _readInitial(fstream&);
   bool _readPI(fstream&);

@@ -121,6 +121,7 @@ CirMgr::simulate(vector<size_t>& sim)
     tmp->set_sim(sim[i]);
   }
   Const0->setGlobalRef();
+  // CirGate::setGlobalRef();
   //all gates simulate
   size_t tmp;
   for(size_t i=0;i<_polist.size();i++)  tmp = _polist[i]->simulate();
@@ -225,12 +226,12 @@ CirMgr::class_by_map(vector<CirGate*>& list,map<size_t,TwoCirFECP*>& Map){
   }
   return;
 }
-// two circuit simulate -> classify -> sorting
 bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
    // check if all input are the same
    // if golden is less than original, add some redundant inputs at golden
    // if more, just random simulate them
 
+  // two circuit simulate -> classify -> sorting
    // do compare
   if (simLog != 0){
     original->setSimLog(simLog);
