@@ -120,8 +120,8 @@ CirMgr::simulate(vector<size_t>& sim)
     CirPiGate* tmp = _pilist[i];
     tmp->set_sim(sim[i]);
   }
-  Const0->setGlobalRef();
-  // CirGate::setGlobalRef();
+  // Const0->setGlobalRef();
+  CirGate::setGlobalRef();
   //all gates simulate
   size_t tmp;
   for(size_t i=0;i<_polist.size();i++)  tmp = _polist[i]->simulate();
