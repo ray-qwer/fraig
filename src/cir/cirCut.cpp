@@ -131,6 +131,13 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
             bool ans2 = solver2.solve();
             if(ans2){
                 // successful
+                for(int i=0;i<size_a;++i){
+                    for(int j=0;j<size_b+size_newb;++j){
+                        if(solver.getValue(Vars[i][j]) == 1) {
+                            cout<<"i: "<<i<<", j: "<<j<<endl;
+                        }
+                    }
+                }
                 break;
             }
             else {
@@ -179,5 +186,15 @@ void addCNF(SatSolver& s, CirGate* g)
             s.addAigCNF(g->get_fanout()[i].get_gate()->get_sat_var(), g->get_fanout()[i].get_gate()->get_fanin()[0].get_gate()->get_sat_var(), flag1, g->get_fanout()[i].get_gate()->get_fanin()[1].get_gate()->get_sat_var(), flag2);
         }
         addCNF(s,g->get_fanout()[i].get_gate());
+    }
+}
+
+void CutFinding(vector<CirGate*>& aList, vector<CirGate*>& bList){
+    // to get list and throw them to cut matching
+    for(auto m = _FECgroups->_groups.begin(); m != _FECgroups->_groups.end(); m++ ){
+        if (!(*m)->_o_pairs.empty() && !(*m)->_g_pairs.empty()){
+            aList.insert(aList.end(), (*m)->_o_pairs.begin(), (*m)->_o_pairs.end());
+            bList.insert(bList.end(), (*m)->_g_pairs.begin(), (*m)->_g_pairs.end());
+        }
     }
 }
