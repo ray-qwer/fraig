@@ -19,6 +19,7 @@ using namespace std;
 
 extern CirMgr* original;
 extern CirMgr* golden;
+extern TwoCirFECG* _FECgroups;
 extern int effLimit;
 
 bool
@@ -144,6 +145,7 @@ CirReadCmd::exec(const string& option)
       }
    }
    curCmd = CIRREAD;
+   _FECgroups = new TwoCirFECG;
    return CMD_EXEC_DONE;
 }
 
