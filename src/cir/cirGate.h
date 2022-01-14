@@ -70,6 +70,7 @@ class TwoCirFECP
     friend class TwoCirFECG;
     friend void classifyTwoCir();
     friend class CirMgr;
+    friend void CutFinding(vector<CirGate*>&,vector<CirGate*>&);
     vector<CirGate*> _g_pairs;
     vector<CirGate*> _o_pairs;
     bool g_is_sort = false;
@@ -89,6 +90,7 @@ class TwoCirFECG{
     // friend function
     friend class CirMgr;
     friend void classifyTwoCir();
+    friend void CutFinding(vector<CirGate*>&,vector<CirGate*>&);
     //
     vector<TwoCirFECP*> _groups;
     bool first_time = true;

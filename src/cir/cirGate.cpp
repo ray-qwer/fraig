@@ -24,7 +24,7 @@ using namespace std;
 
 extern CirMgr *original;
 extern CirMgr *golden;
-TwoCirFECG* _FECgroups;
+TwoCirFECG* _FECgroups =0;
 /**************************************/
 /*   class CirGate member functions   */
 /**************************************/
