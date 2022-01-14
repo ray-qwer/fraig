@@ -6,14 +6,3 @@ b07901055_fraig/
 *.o
 ._*
 .DS_Store
-bin/fraig
-lib/._lib.d
-lib/._libcmd-linux16.a
-lib/._libcmd-linux18.a
-lib/._libcmd-mac.a
-lib/libcir.a
-lib/libcmd-mac.a
-lib/libcmd.a
-lib/libsat.a
-lib/libutil.a
-src/sat/.depend.mak
