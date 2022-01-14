@@ -82,7 +82,7 @@ class TwoCirFECG{
     ~TwoCirFECG(){_groups.clear();}
     bool is_first(){return first_time;}
     void set_first_time(bool b){first_time = b;}
-    void append(TwoCirFECP* t){cout<<"append groups "<<_groups.size()<<endl;_groups.push_back(t); is_sort = false;}
+    void append(TwoCirFECP* t){/*cout<<"append groups "<<_groups.size()<<endl*/;_groups.push_back(t); is_sort = false;}
     void sorting();
     void reset(){_groups.clear(); first_time = true; is_sort = false;}
     size_t get_groups_size(){return _groups.size();}
@@ -192,7 +192,7 @@ public:
   void reportFanout(int level);
   void set_FECpair(TwoCirFECP* g){
     _fecpair = g;
-    cout<<"set_FEC "<<_fecpair->get_g_pairs().size()<<endl;
+    // cout<<"set_FEC "<<_fecpair->get_g_pairs().size()<<endl;
   }
   unsigned getVar() { return _var; }
   GateType getType() { return _gateType; }
