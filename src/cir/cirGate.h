@@ -225,7 +225,7 @@ protected:
   GateType _gateType;
   unsigned _var;
   unsigned _lineNo;
-  unsigned sat_var;
+  Var sat_var;
   vector<CirGateV> _fanin;
   vector<CirGateV> _fanout;
   // vector<CirGate*> _fanin;
