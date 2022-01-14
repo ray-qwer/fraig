@@ -561,9 +561,9 @@ is_inv(size_t a,size_t b){
 void
 CirMgr::printFECPairs() 
 {
-   _FECgroups.sorting();
+   _FECgroups->sorting();
    size_t count = 0;
-   for(auto i:_FECgroups._groups){
+   for(auto i:_FECgroups->_groups){
       if(i->_o_pairs.size()>1){
          cout<<"["<<count<<"]";
          count+=1;

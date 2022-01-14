@@ -76,7 +76,7 @@ CirMgr::fraig()
   do_sim = false;
   dostrash = false;
   //dfs
-  for(auto i = _FECgroups._groups.begin();i!=_FECgroups._groups.end();i++){
+  for(auto i = _FECgroups->_groups.begin();i!=_FECgroups->_groups.end();i++){
     TwoCirFECP* tmp = *i;
     if(tmp->_o_pairs.size()==1){
       tmp->_o_pairs[0]->set_FECpair(0);
@@ -96,7 +96,7 @@ CirMgr::fraig()
       tmp->_o_pairs[0]->set_FECpair(0);
     }
   }
-  _FECgroups.reset();
+  _FECgroups->reset();
   Const0->set_FECpair(0);
   resetdfs();
 }
