@@ -28,7 +28,7 @@ class CirGateV;
 //------------------------------------------------------------------------
 //   Define classes
 //------------------------------------------------------------------------
-extern TwoCirFECG _FECgroups;
+extern TwoCirFECG* _FECgroups;
 bool compare_CirGate(CirGate*,CirGate*);
 class FECpair
 {
@@ -45,15 +45,18 @@ class FECpair
 class TwoCirFECP
 {
   public:
-    TwoCirFECP(){}
-    ~TwoCirFECP(){_g_pairs.clear();_o_pairs.clear();}
+    TwoCirFECP(){
+      _g_pairs={};
+      _o_pairs={};
+    }
+    ~TwoCirFECP(){cout<<"remove??"<<endl;_g_pairs.clear();_o_pairs.clear();}
     void append(CirGate* t, bool is_o){
       if (is_o){
-        _o_pairs.emplace_back(t);
+        _o_pairs.push_back(t);
         o_is_sort = false;
       }
       else{
-        _g_pairs.emplace_back(t);
+        _g_pairs.push_back(t);
         g_is_sort = false;
       }
       
@@ -78,7 +81,7 @@ class TwoCirFECG{
     ~TwoCirFECG(){_groups.clear();}
     bool is_first(){return first_time;}
     void set_first_time(bool b){first_time = b;}
-    void append(TwoCirFECP* t){_groups.emplace_back(t); is_sort = false;}
+    void append(TwoCirFECP* t){cout<<"append groups "<<_groups.size()<<endl;_groups.push_back(t); is_sort = false;}
     void sorting();
     void reset(){_groups.clear(); first_time = true; is_sort = false;}
     size_t get_groups_size(){return _groups.size();}
@@ -180,6 +183,7 @@ public:
   void reportFanout(int level);
   void set_FECpair(TwoCirFECP* g){
     _fecpair = g;
+    cout<<"set_FEC "<<_fecpair->get_g_pairs().size()<<endl;
   }
   unsigned getVar() { return _var; }
   GateType getType() { return _gateType; }

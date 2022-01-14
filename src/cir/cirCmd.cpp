@@ -503,6 +503,8 @@ CirSimCmd::exec(const string& option)
          return CMD_EXEC_ERROR;
       }
       simTwoCir(doRandom,(doLog)?(&logFile):0,(doRandom)?0:(&patternFile));
+      // vector<size_t> gpattern;
+      // classifyTwoCirGoodPattern(1,gpattern);
    }
    
    

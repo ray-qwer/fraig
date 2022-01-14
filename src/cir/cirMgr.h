@@ -24,7 +24,7 @@ using namespace std;
 
 extern CirMgr *original;
 extern CirMgr *golden;
-extern TwoCirFECG _FECgroups;
+extern TwoCirFECG* _FECgroups;
 bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);
 
 // TODO: Define your own data members and member functions
