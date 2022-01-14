@@ -21,12 +21,20 @@
 
 using namespace std;
 
+extern CirMgr *original;
+extern CirMgr *golden;
+
+void addCNF(SatSolver&, CirGate*);
+void build_up_circuot_cnf(SatSolver&);
+
 bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirGate*>& new_b_list)
 {
     SatSolver solver;
     solver.initialize();
+
     int size_a=a_list.size(),size_b=b_list.size(), size_newb=new_b_list.size();
     cout<<"size_a: "<<size_a<<", size_b: "<<size_b<<", size_newb: "<<size_newb<<endl;
+
     vector<vector<Var> > Vars(size_a,vector<Var>(size_b+size_newb,0));
     for(int i=0;i<size_a;++i){
         for(int j=0;j<size_b+size_newb;++j){
@@ -80,16 +88,96 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
         }
         solver.addClause(newbs, newbs_bool);
     }
-    int ans=solver.solve();
-    solver.printStats();
-    cout << (ans? "SAT" : "UNSAT") << endl;
-    if (ans) {
-        for(int i=0;i<size_a;++i){
-            for(int j=0;j<size_b+size_newb;++j){
-                cout << solver.getValue(Vars[i][j]) << endl;
+    while(true) {
+        int ans=solver.assumpSolve();
+        solver.printStats();
+        cout << (ans? "SAT" : "UNSAT") << endl;
+        if (ans) {
+            //build up circuit
+            SatSolver solver2;
+            solver2.initialize();
+            for(int i=0;i<size_a;i++){
+                addCNF(solver2,a_list[i]);
+            }
+
+            for(int i=0;i<size_b;i++){
+                addCNF(solver2,b_list[i]);
+            }
+
+            for(int i=0;i<original->_polist.size();i++){
+                Var newV;
+                bool flag1, flag2;
+                if(original->_polist[i]->get_sat_var()==0){
+                    newV=solver2.newVar();
+                    original->_polist[i]->set_sat_var(newV);
+                }
+                if(golden->_polist[i]->get_sat_var()==0){
+                    newV=solver2.newVar();
+                    golden->_polist[i]->set_sat_var(newV);
+                }
+                Var f=solver2.newVar();
+                flag1=golden->_polist[i]->get_fanin()[0].get_inv();
+                flag2=golden->_polist[i]->get_fanin()[1].get_inv();
+                solver2.addXorCNF(f,original->_polist[i]->get_sat_var(),flag1,golden->_polist[i]->get_sat_var(),flag2);
+            }
+            // xor a&b inputs
+            vector<vector<Var> > Vars2(size_a,vector<Var>(size_b+size_newb,0));
+            for(int i=0;i<size_a;++i){
+                for(int j=0;j<size_b+size_newb;++j){
+                    Vars2[i][j] = solver2.newVar();
+                    solver2.addXorCNF(Vars2[i][j],a_list[i]->get_sat_var(),0,b_list[j]->get_sat_var(),0);
+                }
+            }
+            bool ans2 = solver2.solve();
+            if(ans2){
+                // successful
+                break;
+            }
+            else {
+                // put all Var = true in solver into tmp
+                vector<Var> tmp;
+                for(int i=0;i<size_a;++i){
+                    for(int j=0;j<size_b+size_newb;++j){
+                        if(solver.getValue(Vars[i][j]) == 1) {
+                            tmp.push_back(Vars[i][j]);
+                        }
+                    }
+                }
+                vector<bool> tmp_bool(tmp.size(), true);
+                solver.addClause(tmp, tmp_bool);
             }
         }
-    }
+        // failed
+        else break;
 
-    return ans;
+    }
+    return 1;
+}
+
+void addCNF(SatSolver& s, CirGate* g)
+{
+    Var newV;
+    for(int i=0;i<g->get_fanout().size();i++){
+    
+        if(g->get_fanout()[i].get_gate()->get_sat_var()==0){
+            newV=s.newVar();
+            g->get_fanout()[i].get_gate()->set_sat_var(newV);
+        }
+        bool flag1=0,flag2=0;
+        if(g->getType()==PO_GATE){return;}
+        else{
+            if(g->get_fanout()[i].get_gate()->get_fanin()[0].get_gate()->get_sat_var()==0){
+                newV=s.newVar();
+                g->get_fanout()[i].get_gate()->get_fanin()[0].get_gate()->set_sat_var(newV);
+            }
+            if(g->get_fanout()[i].get_gate()->get_fanin()[1].get_gate()->get_sat_var()==0){
+                newV=s.newVar();
+                g->get_fanout()[i].get_gate()->get_fanin()[1].get_gate()->set_sat_var(newV);
+            }
+            flag1=g->get_fanout()[i].get_gate()->get_fanin()[0].get_inv();
+            flag2=g->get_fanout()[i].get_gate()->get_fanin()[1].get_inv();
+            s.addAigCNF(g->get_fanout()[i].get_gate()->get_sat_var(), g->get_fanout()[i].get_gate()->get_fanin()[0].get_gate()->get_sat_var(), flag1, g->get_fanout()[i].get_gate()->get_fanin()[1].get_gate()->get_sat_var(), flag2);
+        }
+        addCNF(s,g->get_fanout()[i].get_gate());
+    }
 }

@@ -124,18 +124,25 @@ class CirGateV {
   friend class CirAigGate;
 
   CirGateV() {}
-  CirGateV(CirGate* g, bool inv): _gate(g), _inv(inv) {}
+  CirGateV(CirGate* g, bool inv): _gate(g), _inv(inv)/*, sat_var(0) */{}
   CirGate* gate() const { return _gate; }
   bool inv() const { return _inv; }
   void set_gate(CirGate* tmp){_gate = tmp;}
-  void set_inv(bool m){if(m==true&&_inv==true)_inv=false;
-  else if(m==false&&_inv==false)_inv = false;
-  else _inv = true;}
+  CirGate* get_gate(){return _gate;}
+  void set_inv(bool m){
+    if(m==true&&_inv==true)_inv=false;
+    else if(m==false&&_inv==false)_inv = false;
+    else _inv = true;
+  }
+  bool get_inv(){return _inv;}
+  // void set_var(Var& v){sat_var=v;}
+  // const Var& get_var(){return sat_var;}
   CirGateV operator = (CirGateV m){_gate = m._gate;_inv = m._inv;}
 
   protected:
   CirGate* _gate;
   bool _inv;
+  // Var sat_var;
 };
 
 class CirGate
@@ -143,7 +150,7 @@ class CirGate
 public:
   CirGate() {}
   CirGate(int var, int lineNo, GateType gateType) {
-    _var = var; _lineNo = lineNo; _gateType = gateType;
+    _var = var; _lineNo = lineNo; sat_var=0; _gateType = gateType;
     _inDFSlist = false;
   }
   virtual ~CirGate() { reset(); }
@@ -159,7 +166,7 @@ public:
   friend class CirMgr;
   friend class CirGateV;
   friend void classifyTwoCir();
-
+  friend bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);
   // Basic access methods
   string getTypeStr() const {
     switch(_gateType) {
@@ -200,6 +207,11 @@ public:
   void reset();
   size_t get_sim(){return _sim;}
 
+  vector<CirGateV>& get_fanin(){return _fanin;}
+  vector<CirGateV>& get_fanout(){return _fanout;}
+  void set_sat_var(Var& v){sat_var=v;}
+  const Var& get_sat_var(){return sat_var;}
+
 private:
   static unsigned _globalRef;
   unsigned _ref;
@@ -211,6 +223,7 @@ protected:
   GateType _gateType;
   unsigned _var;
   unsigned _lineNo;
+  unsigned sat_var;
   vector<CirGateV> _fanin;
   vector<CirGateV> _fanout;
   // vector<CirGate*> _fanin;
