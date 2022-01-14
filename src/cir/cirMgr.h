@@ -79,7 +79,8 @@ private:
   friend void CirGate::connect(map<unsigned,CirGate*>&);
   friend bool simTwoCir(bool, ofstream*,ifstream*);
   friend void classifyTwoCir();
-  friend bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);;
+  friend bool CutMatching(vector<CirGate*>&, vector<CirGate*>&, vector<CirGate*>&);
+  friend void classifyTwoCirGoodPattern(size_t, vector<size_t>&);
   // for parsing
   bool _readInitial(fstream&);
   bool _readPI(fstream&);
@@ -141,4 +142,5 @@ bool compare_gate(CirGate*,CirGate*);
 bool is_inv(size_t,size_t);
 bool simTwoCir(bool, ofstream*,ifstream*);
 void classifyTwoCir();
+void classifyTwoCirGoodPattern(size_t, vector<size_t>&);
 #endif // CIR_MGR_H

@@ -5,4 +5,7 @@ b07901055_fraig/
 .vscode/
 *.o
 ._*
-.DS_Store
+lib/._libcir.a
+lib/._libsat.a
+lib/._libutil.a
+我大廣哥的code/

@@ -201,6 +201,7 @@ public:
   void setToGlobalRef() { _ref = _globalRef; }
   static void setGlobalRef() { ++_globalRef; }
   void reset();
+  size_t get_sim(){return _sim;}
 
   vector<CirGateV>& get_fanin(){return _fanin;}
   vector<CirGateV>& get_fanout(){return _fanout;}

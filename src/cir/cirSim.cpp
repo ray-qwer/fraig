@@ -120,7 +120,8 @@ CirMgr::simulate(vector<size_t>& sim)
     CirPiGate* tmp = _pilist[i];
     tmp->set_sim(sim[i]);
   }
-  Const0->setGlobalRef();
+  // Const0->setGlobalRef();
+  CirGate::setGlobalRef();
   //all gates simulate
   size_t tmp;
   for(size_t i=0;i<_polist.size();i++)  tmp = _polist[i]->simulate();
@@ -225,12 +226,12 @@ CirMgr::class_by_map(vector<CirGate*>& list,map<size_t,TwoCirFECP*>& Map){
   }
   return;
 }
-// two circuit simulate -> classify -> sorting
 bool simTwoCir(bool doRandom, ofstream* simLog, ifstream* patternFile){
    // check if all input are the same
    // if golden is less than original, add some redundant inputs at golden
    // if more, just random simulate them
 
+  // two circuit simulate -> classify -> sorting
    // do compare
   if (simLog != 0){
     original->setSimLog(simLog);
@@ -386,4 +387,49 @@ classifyTwoCir(){
       }
     }
   }
+}
+
+void classifyTwoCirGoodPattern(size_t PO, vector<size_t>& GPatern){
+  // workflow: simulate randomly -> get the same pattern from PO -> get pattern from input
+  // -> redo to collect 64 pattern as a size_t -> simulate the collected pattern
+  // -> classify
+  // Two outputs needed to compare
+  if (PO >= golden->_polist.size() || PO >= original->_polist.size()){
+    cerr<<"index is out of length!!"<<endl;
+    return;
+  } 
+  CirGate* g_PO = golden->_polist[PO];    
+  CirGate* o_PO = original->_polist[PO];
+  // simulation parameters
+  srand(time(NULL));
+  size_t input_size = (golden->_pilist.size()>original->_pilist.size())?golden->_pilist.size():original->_pilist.size();
+  vector<size_t> sim_random;
+  vector<size_t> sim_goodPattern;
+  
+  size_t test_times = (2>input_size/64)?2:input_size/16;
+  size_t num_of_pairs = _FECgroups.get_groups_size();
+  size_t pattern = 0;
+  size_t pairs_count = 0;
+  sim_random.reserve(input_size);
+  // simulate randomly
+  for (int i = 0; i < input_size;i++){
+    unsigned a = rand(), b = rand();
+    size_t sim = (((size_t)a) << 31) | ((size_t)b);
+    sim_random[i] = sim;
+  }
+  original->simulate(sim_random);
+  golden->simulate(sim_random);
+  void* goodPattern_output =(void*) ~(g_PO->get_sim() ^ o_PO->get_sim()); 
+  for (int i = 0; i< sizeof(size_t)*8; i++){
+    if(((unsigned char*)goodPattern_output)[i]){
+      pattern++;
+      for (int j = 0; j < input_size; j++){
+        void *m = (void*) sim_random[j]; 
+        sim_goodPattern[j] = sim_goodPattern[j]<<1 |((unsigned char*) m)[i];
+      }
+    }
+  }
+  cout<<"collected "<<pattern<<"."<<endl;
+  
+  
 }
