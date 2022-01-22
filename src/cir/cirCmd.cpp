@@ -504,14 +504,14 @@ CirSimCmd::exec(const string& option)
          cerr << "Error: circuit is not yet constructed!!" << endl;
          return CMD_EXEC_ERROR;
       }
-      simTwoCir(doRandom,(doLog)?(&logFile):0,(doRandom)?0:(&patternFile));
-      vector<CirGate*> aList;
-      vector<CirGate*> bList;
-      vector<CirGate*> NB;
-      CutFinding(aList,bList);
-      CutMatching(aList,bList,NB);
-      // vector<size_t> gpattern;
-      // classifyTwoCirGoodPattern(1,gpattern);
+      // simTwoCir(doRandom,(doLog)?(&logFile):0,(doRandom)?0:(&patternFile));
+      vector<size_t> gpattern;
+      classifyTwoCirGoodPattern(1,gpattern);
+      // vector<CirGate*> aList;
+      // vector<CirGate*> bList;
+      // vector<CirGate*> NB;
+      // CutFinding(aList,bList);
+      // CutMatching(aList,bList,NB);
    }
    
    

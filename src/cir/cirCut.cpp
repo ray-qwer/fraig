@@ -93,18 +93,18 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
         solver.printStats();
         cout << (ans? "SAT" : "UNSAT") << endl;
         if (ans) {
-            cout<<"ans1 True"<<endl;
+            // cout<<"ans1 True"<<endl;
             //build up circuit
             SatSolver solver2;
             solver2.initialize();
             for(int i=0;i<size_a;i++){
                 addCNF(solver2,a_list[i]);
             }
-            cout<<"done alist"<<endl;
+            // cout<<"done alist"<<endl;
             for(int i=0;i<size_b;i++){
                 addCNF(solver2,b_list[i]);
             }
-            cout<<"done blist"<<endl;
+            // cout<<"done blist"<<endl;
             for(int i=0;i<original->_polist.size();i++){
                 Var newV;
                 bool flag1, flag2;
@@ -119,9 +119,9 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
                 Var f=solver2.newVar();
                 flag1=original->_polist[i]->get_fanin()[0].get_inv();
                 flag2=golden->_polist[i]->get_fanin()[0].get_inv();
-                solver2.addXorCNF(f,original->_polist[i]->get_sat_var(),flag1,golden->_polist[i]->get_sat_var(),flag2);
+                solver2.addXNorCNF(f,original->_polist[i]->get_sat_var(),flag1,golden->_polist[i]->get_sat_var(),flag2);
             }
-            cout<<"done polist"<<endl;
+            // cout<<"done polist"<<endl;
             // xor a&b inputs
             vector<vector<Var> > Vars2(size_a,vector<Var>(size_b+size_newb,0));
             for(int i=0;i<size_a;++i){
@@ -132,20 +132,34 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
             }
             bool ans2 = solver2.solve();
             if(ans2){
-                cout<<"ans2 True"<<endl;
+                // cout<<"ans2 True"<<endl;
                 // successful
+                vector<CirGate*> ans_list;
                 for(int i=0;i<size_a;++i){
                     for(int j=0;j<size_b+size_newb;++j){
                         if(solver.getValue(Vars[i][j]) == 1) {
-                            cout<<"i: "<<i<<", j: "<<j<<endl;
+                            // TODO: if the gate's fanout in the list, then dont print it
+                            ans_list.push_back(a_list[i]);
+                            // cout<<"i: "<<a_list[i]->getVar()<<", j: "<<b_list[i]->getVar()<<endl;
                         }
                     }
                 }
+                // for(int i=0;i<ans_list.size();i++){
+                //     bool prin=1;
+                //     for(int j=0;j<ans_list[i]->get_fanout().size();j++){
+                //         for(int k=0;k<ans_list.size();k++){
+                //             if(ans_list[i]->get_fanout()==ans_list[k]){
+                //                 prin=0;    
+                //             }
+                //         }
+                //     }
+                //     if(prin){cout<<ans_list[i]<<"\n";}
+                // }
                 break;
             }
             else {
                 // put all Var = true in solver into tmp
-                cout<<"ans2 False"<<endl;
+                // cout<<"ans2 False"<<endl;
                 vector<Var> tmp;
                 for(int i=0;i<size_a;++i){
                     for(int j=0;j<size_b+size_newb;++j){
@@ -168,28 +182,31 @@ bool CutMatching(vector<CirGate*>& a_list, vector<CirGate*>& b_list, vector<CirG
 void addCNF(SatSolver& s, CirGate* g)
 {
     Var newV;
-    cout<<"fuck??"<<endl;
+    // cout<<"f**k??"<<endl;
     for(int i=0;i<g->get_fanout().size();i++){
-        cout<<"for loop"<<endl;
-        cout<<g->get_fanout()[i].get_gate()->get_sat_var()<<endl;
+        // cout<<"for loop"<<endl;
+        // cout<<g->get_fanout()[i].get_gate()->get_sat_var()<<endl;
         if(g->get_fanout()[i].get_gate()->get_sat_var()==0){
             newV=s.newVar();
             g->get_fanout()[i].get_gate()->set_sat_var(newV);
         }
-        cout<<"fanout"<<endl;
+        // cout<<"fanout"<<endl;
         bool flag1=0,flag2=0;
-        if(g->getType()==PO_GATE){return;}
+        if(g->get_fanout()[i].get_gate()->getType()==PO_GATE){return;}
         else{
+            // cout<<"gateVar "<<g->get_fanout()[i].get_gate()->getVar()<<endl;
+            // cout<<"gateType "<<g->get_fanout()[i].get_gate()->getType()<<endl;
+            // cout<<"leg num "<<g->get_fanout()[i].get_gate()->get_fanin().size()<<endl;
             if(g->get_fanout()[i].get_gate()->get_fanin()[0].get_gate()->get_sat_var()==0){
                 newV=s.newVar();
                 g->get_fanout()[i].get_gate()->get_fanin()[0].get_gate()->set_sat_var(newV);
             }
-            cout<<"leg0"<<endl;
+            // cout<<"leg0"<<endl;
             if(g->get_fanout()[i].get_gate()->get_fanin()[1].get_gate()->get_sat_var()==0){
                 newV=s.newVar();
                 g->get_fanout()[i].get_gate()->get_fanin()[1].get_gate()->set_sat_var(newV);
             }
-            cout<<"leg1"<<endl;
+            // cout<<"leg1"<<endl;
             flag1=g->get_fanout()[i].get_gate()->get_fanin()[0].get_inv();
             flag2=g->get_fanout()[i].get_gate()->get_fanin()[1].get_inv();
             s.addAigCNF(g->get_fanout()[i].get_gate()->get_sat_var(), g->get_fanout()[i].get_gate()->get_fanin()[0].get_gate()->get_sat_var(), flag1, g->get_fanout()[i].get_gate()->get_fanin()[1].get_gate()->get_sat_var(), flag2);

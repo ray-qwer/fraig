@@ -70,7 +70,21 @@ class SatSolver
         lits.push(lf);
          _solver->addClause(lits); lits.clear();
       }
-
+      // TODO: addXNOR
+      void addXNorCNF(Var vf, Var va, bool fa, Var vb, bool fb) {
+         vec<Lit> lits;
+         Lit lf = Lit(vf);
+         Lit la = fa? ~Lit(va): Lit(va);
+         Lit lb = fb? ~Lit(vb): Lit(vb);
+         lits.push(~la); lits.push( lb); lits.push(~lf);
+         _solver->addClause(lits); lits.clear();
+         lits.push( la); lits.push(~lb); lits.push(~lf);
+         _solver->addClause(lits); lits.clear();
+         lits.push( la); lits.push( lb); lits.push( lf);
+         _solver->addClause(lits); lits.clear();
+         lits.push(~la); lits.push(~lb); lits.push( lf);
+         _solver->addClause(lits); lits.clear();
+      }
       void addAigCNF(Var vf, Var va, bool fa, Var vb, bool fb) {
          vec<Lit> lits;
          Lit lf = Lit(vf);

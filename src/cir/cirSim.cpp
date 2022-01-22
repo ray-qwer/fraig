@@ -428,28 +428,43 @@ void classifyTwoCirGoodPattern(size_t PO, vector<size_t>& GPatern){
   size_t pattern = 0;
   size_t pairs_count = 0;
   sim_random.reserve(input_size);
-  // simulate randomly
-  for (int i = 0; i < input_size;i++){
-    unsigned a = rand(), b = rand();
-    size_t sim = (((size_t)a) << 31) | ((size_t)b);
-    sim_random[i] = sim;
-  }
-  original->simulate(sim_random);
-  golden->simulate(sim_random);
-  cout<<"1"<<endl;
-  void* goodPattern_output =(void*) ~(g_PO->get_sim() ^ o_PO->get_sim()); 
-  cout<<"2"<<endl;
-  for (int i = 0; i< sizeof(size_t)*8; i++){
-    cout<<"3"<<endl;
-    cout<<((unsigned char*)goodPattern_output)[i]<<endl;
-    if(((unsigned char*)goodPattern_output)[i]){
-      pattern++;
-      cout<<"4"<<endl;
-      for (int j = 0; j < input_size; j++){
-        void *m = (void*) sim_random[j]; 
-        sim_goodPattern[j] = sim_goodPattern[j]<<1 |((unsigned char*) m)[i];
+  sim_goodPattern.assign(input_size,0);
+  while(pairs_count<test_times){
+    // simulate randomly to collect size_t num of goodPattern
+    size_t goodPatternCount = 0;
+    while(goodPatternCount<64){
+      sim_random.assign(input_size,0);
+      for (int i = 0; i < input_size;i++){
+        unsigned a = rand(), b = rand();
+        size_t sim = (((size_t)a) << 31) | ((size_t)b);
+        sim_random[i] = sim;
       }
+      original->simulate(sim_random);
+      golden->simulate(sim_random);
+      bool gpcFlag = false;
+      unsigned goodPattern_output = ~(g_PO->get_sim() ^ o_PO->get_sim()); 
+      for (int i = 0; i< sizeof(size_t)*8; i++){
+        bool flag = goodPattern_output & (unsigned) 1;
+        if(flag){
+          goodPatternCount++;
+          for (int j = 0; j < input_size; j++){
+            size_t m = (sim_random[j] >> i) & (unsigned) 1;
+            sim_goodPattern[j] = sim_goodPattern[j]<<1 + m;
+          }
+          if(goodPatternCount>=sizeof(size_t)*8){
+            gpcFlag = true;
+            break;
+          }
+        }
+        goodPattern_output = goodPattern_output>>1;
+      }
+      if(gpcFlag)
+        break;
     }
+    // simulate good pattern
+    original->simulate(sim_goodPattern);
+    golden->simulate(sim_goodPattern);
+    classifyTwoCir();
   }
   cout<<"collected "<<pattern<<"."<<endl;
 }
